@@ -49,14 +49,14 @@ def random_n2opt(solution: list) -> list:
 def n2opt(solution: list, i: int, j: int) -> list:
      return solution[:i+1] + solution[i+1:j+1][::-1] + solution[j+1:]
 
-def sa(eval: Eval, initial_solution: list, parameters: dict, max_evals: int) -> tuple:
+def sa(eval: Eval, initial_solution: list, initial_temperature, repetitions, cooling_factor, max_evals: int) -> tuple:
     print("Starting Simulated Annealing")
     current_solution = initial_solution
     current_quality = eval.eval(current_solution)
-    current_temperature = parameters['initial_temperature']
+    current_temperature = initial_temperature
 
     while eval.evals_count < max_evals:
-        for _ in range(parameters['repetitions']):
+        for _ in range(repetitions):
             neighbor_solution = random_n2opt(current_solution)
             neighbor_quality = eval.eval(neighbor_solution)
             
@@ -71,6 +71,6 @@ def sa(eval: Eval, initial_solution: list, parameters: dict, max_evals: int) -> 
                 current_quality = neighbor_quality
                 continue
         
-        current_temperature *= parameters['cooling_factor']
+        current_temperature *= cooling_factor
 
     return (current_solution, current_quality)
