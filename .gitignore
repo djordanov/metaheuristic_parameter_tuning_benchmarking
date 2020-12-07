@@ -1,1 +1,5 @@
 __pycache__/
+.Rproj.user
+instances/*
+instances/20nodes/*
+instances/100nodes/*
