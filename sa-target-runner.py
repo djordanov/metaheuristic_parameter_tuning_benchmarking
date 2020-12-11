@@ -24,6 +24,10 @@ import re
 import subprocess
 import sys
 
+from pathlib import Path
+import numpy as np 
+import pandas as pd 
+
 import random
 import tsplib95
 import metaheuristics
@@ -36,8 +40,6 @@ if __name__=='__main__':
         print("\nUsage: ./target-runner.py <configuration_id> <instance_id> <seed> <instance_path_name> <list of parameters>\n")
         sys.exit(1)
 
-    # print("params: " + str(sys.argv[5:]))
-
     # Get the parameters as command line arguments.
     configuration_id = sys.argv[1]
     instance_id = sys.argv[2]
@@ -45,20 +47,22 @@ if __name__=='__main__':
     instance = sys.argv[4]
     cand_params = sys.argv[5:]
 
-    # Set parameters
+    # load problem
     problem: tsplib95.models.StandardProblem = tsplib95.load(instance)
+    tour: tsplib95.models.StandardProblem = tsplib95.load(Path(instance).with_suffix('.opt.tour').absolute())
+    optimal_quality: int = problem.trace_tours(tour.tours)[0]
 
+    # Set parameters
     eval: metaheuristics.Eval = metaheuristics.Eval(problem)
     initial_solution = list(range(problem.dimension))
     random.shuffle(initial_solution)
-    max_evals = 450 * problem.dimension
+    max_evals = 100 * problem.dimension
 
     # Tuned parameters
     initial_temperature = None
     repetitions = None
     cooling_factor = None
     
-    # print("cand_params: " + str(cand_params))
     while len(cand_params) > 1:
         # Get and remove first and second elements.
         param = cand_params.pop(0)
@@ -74,7 +78,8 @@ if __name__=='__main__':
     
     # Run runner
     quality = metaheuristics.sa(eval, initial_solution, initial_temperature, repetitions, cooling_factor, max_evals)
-    print(quality)
+    quality_deviation = (quality - optimal_quality)
+    print(quality_deviation)
     
     sys.exit(0)
 
