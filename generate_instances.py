@@ -9,14 +9,17 @@ def generate_optimal_solutions(instancefolder: str):
     from python_tsp.exact import solve_tsp_dynamic_programming
 
     print('--- Computing optimal solutions... ---')
-    df: pd.DataFrame = pd.DataFrame({'name' : [], 'permutation' : [], 'distance' : []})
 
     # iterate over instances
     entries = Path(instancefolder)
     for entry in entries.iterdir():
         
+        if entry.suffix != '.tsp':
+            continue
+
         # load problem and get distances
-        problem = tsplib95.load(instancefolder + entry.name)
+        print(entry.absolute())
+        problem = tsplib95.load(entry.absolute())
         cnodes = len(list(problem.get_nodes()))
         distances = [ [problem.get_weight(a, b) for b in range(cnodes)] for a in range(cnodes) ]
 
@@ -25,11 +28,18 @@ def generate_optimal_solutions(instancefolder: str):
         permutation, distance = solve_tsp_dynamic_programming(distance_matrix)
 
         # save optimal solution
-        print(entry.name)
         print(str(permutation))
         print(distance)
-        df = df.append({'name' : entry.name, 'permutation' : str(permutation), 'distance' : str(distance)}, ignore_index = True)
-    df.to_csv(instancefolder + 'optimal_solutions.txt', sep = '\t')
+        optpath = Path(instancefolder + entry.name).with_suffix('.opt.tour')
+        fopt = optpath.open('w+')
+        fopt.write('NAME : ' + entry.name + '.tsp.optbc.tour\n')
+        fopt.write('TYPE : TOUR\n')
+        fopt.write('DIMENSION : '+ str(problem.dimension) + '\n')
+        fopt.write('TOUR_SECTION''\n')
+        for node in permutation:
+            fopt.write(str(node) + '\n')
+        fopt.write('-1')
+        fopt.close()
 
 def generate_random_euclidean__instances(count: int, cnodes: int, squaresize: int):
     # use tsplib format for easy use of tsplib95 imports
@@ -50,5 +60,4 @@ def generate_random_euclidean__instances(count: int, cnodes: int, squaresize: in
         for inode in range(cnodes):
             line = str(inode) + " " + str(random.randint(0, squaresize)) + " " + str(random.randint(0, squaresize))
             f.write(line + "\n")
-
         f.close()
