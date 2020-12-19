@@ -49,8 +49,6 @@ if __name__=='__main__':
 
     # load problem
     problem: tsplib95.models.StandardProblem = tsplib95.load(instance)
-    tour: tsplib95.models.StandardProblem = tsplib95.load(Path(instance).with_suffix('.opt.tour').absolute())
-    optimal_quality: int = problem.trace_tours(tour.tours)[0]
 
     # Set parameters
     eval: metaheuristics.Eval = metaheuristics.Eval(problem)
@@ -77,6 +75,9 @@ if __name__=='__main__':
             target_runner_error("unknown parameter %s" % (param))
     
     # Run runner
+    optimaltour: tsplib95.models.StandardProblem = tsplib95.load(Path(instance).with_suffix('.opt.tour').absolute())
+    optimal_quality: int = problem.trace_tours(optimaltour.tours)[0]
+
     quality = metaheuristics.sa(eval, initial_solution, initial_temperature, repetitions, cooling_factor, max_evals)
     quality_deviation = (quality - optimal_quality)
     print(quality_deviation)
