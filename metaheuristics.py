@@ -28,39 +28,47 @@ def random_n2opt(solution: list) -> list:
 def n2opt(solution: list, i: int, j: int) -> list:
      return solution[:i+1] + solution[i+1:j+1][::-1] + solution[j+1:]
 
-def sa(eval: Eval, initial_solution: list, initial_temperature: int, repetitions: int, cooling_factor: float, max_evals: int) -> tuple:
-    # print("Starting Simulated Annealing with \n")
-    # print("initial_solution: " + str(initial_solution) + "\n")
-    # print("initial_temperature: " + str(initial_temperature) + "\n")
-    # print("repetitions: " + str(repetitions) + "\n")
-    # print("cooling_factor: " + str(cooling_factor) + "\n")
-    # print("max_evals: " + str(max_evals) + "\n")
+def sa( eval: Eval, \
+        initial_solution: list, 
+        initial_temperature: int, 
+        repetitions: int, 
+        cooling_factor: float, 
+        terminate: dict) -> dict:
 
+    # setup
     current_solution = initial_solution
     current_quality = eval.eval(current_solution)
     current_temperature = initial_temperature
     best_quality = current_quality
 
-    while eval.evals_count < max_evals:
+    while True:
         for _ in range(repetitions):
             neighbor_solution = random_n2opt(current_solution)
             neighbor_quality = eval.eval(neighbor_solution)
 
+            # downhill moves
             if neighbor_quality < best_quality:
                 best_quality = neighbor_quality
             
             if neighbor_quality <= current_quality:
                 current_solution = neighbor_solution
                 current_quality = neighbor_quality
-                continue
             
-            probability = math.e**((current_quality - neighbor_quality)/current_temperature)
-            if random.random() < probability:
-                current_solution = neighbor_solution
-                current_quality = neighbor_quality
-                continue
-        
-        current_temperature *= cooling_factor
+            else: # uphill moves
+                probability = math.e**((current_quality - neighbor_quality)/current_temperature)
+                if random.random() < probability:
+                    current_solution = neighbor_solution
+                    current_quality = neighbor_quality
+            
+            # check termination condition
+            if 'evals' in terminate and eval.evals_count >= terminate['evals']:
+                return {'quality': best_quality, 'countevals': eval.evals_count, 'timestamp': time.time()}
+            if 'quality' in terminate and eval.best_quality <= terminate['quality']:
+                return {'quality': best_quality, 'countevals': eval.evals_count, 'timestamp': time.time()}
+            if 'time' in terminate and eval.time.time() >= terminate['time']:
+                return {'quality': best_quality, 'countevals': eval.evals_count, 'timestamp': time.time()}
+            if 'temperature' in terminate and current_temperature >= terminate['temperature']:
+                return {'quality': best_quality, 'countevals': eval.evals_count, 'timestamp': time.time()}
 
-    # print("Simulated Annealing finished with quality " + str(best_quality))
-    return {'quality': best_quality, 'countevals': eval.evals_count, 'timestamp': time.time()}
+        # cool down
+        current_temperature *= cooling_factor

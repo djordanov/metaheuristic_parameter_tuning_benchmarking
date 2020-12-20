@@ -36,7 +36,7 @@ results = Results('baserun')
 instancefolder = 'instances/20nodes'
 entries = Path(instancefolder)
 
-for _ in range(100):
+for _ in range(1):
     for entry in entries.iterdir():
 
         if entry.suffix != '.tsp':
@@ -49,7 +49,7 @@ for _ in range(100):
         initial_solution = list(problem.get_nodes())
         random.shuffle(initial_solution)
 
-        result = sa(eval, initial_solution, 500, 200, 0.9, 10000)
+        result = sa(eval, initial_solution, 200, 200, 0.8, {'evals': 100})
         quality_deviation = (result['quality'] - optimal_quality) / optimal_quality
         
         results.instances.append(entry.name)
