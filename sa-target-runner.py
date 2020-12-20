@@ -30,10 +30,7 @@ import pandas as pd
 
 import random
 import tsplib95
-import metaheuristics
-
-## This a dummy example that shows how to parse the parameters defined in
-## parameters.txt and does not need to call any other software.
+from metaheuristics import sa, Eval
 
 if __name__=='__main__':
     if len(sys.argv) < 5:
@@ -51,10 +48,9 @@ if __name__=='__main__':
     problem: tsplib95.models.StandardProblem = tsplib95.load(instance)
 
     # Set parameters
-    eval: metaheuristics.Eval = metaheuristics.Eval(problem)
+    eval: Eval = Eval(problem)
     initial_solution = list(range(problem.dimension))
     random.shuffle(initial_solution)
-    max_evals = 100 * problem.dimension
 
     # Tuned parameters
     initial_temperature = None
@@ -78,9 +74,19 @@ if __name__=='__main__':
     optimaltour: tsplib95.models.StandardProblem = tsplib95.load(Path(instance).with_suffix('.opt.tour').absolute())
     optimal_quality: int = problem.trace_tours(optimaltour.tours)[0]
 
-    result = metaheuristics.sa(eval, initial_solution, initial_temperature, repetitions, cooling_factor, max_evals)
-    quality_deviation = (result['quality'] - optimal_quality)
-    print(quality_deviation)
+    result = sa(eval = eval, 
+                        initial_solution = initial_solution,
+                        initial_temperature = initial_temperature,
+                        repetitions = repetitions,
+                        cooling_factor = cooling_factor,
+                        terminate = {'noimprovement': 5})
+    print((result['quality'] - optimal_quality) / optimal_quality)
+
+    # for fixed-quality termination criterion 
+    # if result['quality'] <= 0.05: # if quality termination condition reached
+    #     print(result['evals'])
+    # else: # if timeout
+    #     print(100000)
     
     sys.exit(0)
 

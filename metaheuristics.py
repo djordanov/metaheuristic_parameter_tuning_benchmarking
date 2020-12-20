@@ -30,18 +30,22 @@ def n2opt(solution: list, i: int, j: int) -> list:
 
 def sa( eval: Eval, \
         initial_solution: list, 
-        initial_temperature: int, 
+        initial_temperature: float, 
         repetitions: int, 
         cooling_factor: float, 
         terminate: dict) -> dict:
 
     # setup
+    starttime = time.time()
     current_solution = initial_solution
     current_quality = eval.eval(current_solution)
     current_temperature = initial_temperature
     best_quality = current_quality
+    count_temperatures_wo_improvement = 0
 
     while True:
+        count_temperatures_wo_improvement += 1
+
         for _ in range(repetitions):
             neighbor_solution = random_n2opt(current_solution)
             neighbor_quality = eval.eval(neighbor_solution)
@@ -49,6 +53,7 @@ def sa( eval: Eval, \
             # downhill moves
             if neighbor_quality < best_quality:
                 best_quality = neighbor_quality
+                count_temperatures_wo_improvement = 0
             
             if neighbor_quality <= current_quality:
                 current_solution = neighbor_solution
@@ -61,14 +66,12 @@ def sa( eval: Eval, \
                     current_quality = neighbor_quality
             
             # check termination condition
-            if 'evals' in terminate and eval.evals_count >= terminate['evals']:
-                return {'quality': best_quality, 'countevals': eval.evals_count, 'timestamp': time.time()}
-            if 'quality' in terminate and eval.best_quality <= terminate['quality']:
-                return {'quality': best_quality, 'countevals': eval.evals_count, 'timestamp': time.time()}
-            if 'time' in terminate and eval.time.time() >= terminate['time']:
-                return {'quality': best_quality, 'countevals': eval.evals_count, 'timestamp': time.time()}
-            if 'temperature' in terminate and current_temperature >= terminate['temperature']:
-                return {'quality': best_quality, 'countevals': eval.evals_count, 'timestamp': time.time()}
+            if 'evals' in terminate and eval.evals_count >= terminate['evals'] \
+                or 'quality' in terminate and best_quality <= terminate['quality'] \
+                or 'time' in terminate and time.time() - starttime >= terminate['time'] \
+                or 'temperature' in terminate and current_temperature >= terminate['temperature'] \
+                or 'noimprovement' in terminate and count_temperatures_wo_improvement >= terminate['noimprovement']:
+                return {'quality': best_quality, 'evals': eval.evals_count, 'time': time.time() - starttime}
 
         # cool down
         current_temperature *= cooling_factor
