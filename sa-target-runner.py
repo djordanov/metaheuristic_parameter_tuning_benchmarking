@@ -78,8 +78,8 @@ if __name__=='__main__':
     optimaltour: tsplib95.models.StandardProblem = tsplib95.load(Path(instance).with_suffix('.opt.tour').absolute())
     optimal_quality: int = problem.trace_tours(optimaltour.tours)[0]
 
-    quality = metaheuristics.sa(eval, initial_solution, initial_temperature, repetitions, cooling_factor, max_evals)
-    quality_deviation = (quality - optimal_quality)
+    result = metaheuristics.sa(eval, initial_solution, initial_temperature, repetitions, cooling_factor, max_evals)
+    quality_deviation = (result['quality'] - optimal_quality)
     print(quality_deviation)
     
     sys.exit(0)

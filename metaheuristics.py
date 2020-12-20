@@ -2,6 +2,7 @@ import typing
 
 import math
 import random
+import time
 import numpy as np
 import pandas as pd
 
@@ -62,4 +63,4 @@ def sa(eval: Eval, initial_solution: list, initial_temperature: int, repetitions
         current_temperature *= cooling_factor
 
     # print("Simulated Annealing finished with quality " + str(best_quality))
-    return best_quality
+    return {'quality': best_quality, 'countevals': eval.evals_count, 'timestamp': time.time()}
