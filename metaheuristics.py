@@ -20,6 +20,17 @@ def random_n2opt(solution: list) -> list:
 def n2opt(solution: list, i: int, j: int) -> list:
      return solution[:i+1] + solution[i+1:j+1][::-1] + solution[j+1:]
 
+def accept(current_quality: float, neighbor_quality: float, current_temperature: float) -> bool:
+    if neighbor_quality <= current_quality:
+        return True
+            
+    probability = math.e**((current_quality - neighbor_quality)/current_temperature)
+    if random.random() < probability:
+        return True
+
+    return False
+
+
 def sa( instance: str, 
         initial_temperature: float, 
         repetitions: int, 
@@ -52,6 +63,8 @@ def sa( instance: str,
         count_temperatures_wo_improvement += 1
 
         for _ in range(repetitions):
+
+            # get neighbor
             neighbor_solution = random_n2opt(current_solution)
             neighbor_quality = problem.trace_tours([neighbor_solution])[0]
             evals += 1
@@ -62,23 +75,15 @@ def sa( instance: str,
             logging.debug('Current Temperature: ' + str(current_temperature))
             logging.debug('------')
 
-            # downhill moves
-            if neighbor_quality < best_quality:
-                best_quality = neighbor_quality
-                count_temperatures_wo_improvement = 0
-                count_accepted += 1
-            
-            if neighbor_quality <= current_quality:
+            # accept neighbor if 
+            if accept(current_quality, neighbor_quality, current_temperature):
                 current_solution = neighbor_solution
                 current_quality = neighbor_quality
                 count_accepted += 1
-            
-            else: # uphill moves
-                probability = math.e**((current_quality - neighbor_quality)/current_temperature)
-                if random.random() < probability:
-                    current_solution = neighbor_solution
-                    current_quality = neighbor_quality
-                    count_accepted += 1
+
+                if current_quality < best_quality:
+                    best_quality = current_quality
+                    count_temperatures_wo_improvement = 0    
             
             # check termination condition
             if 'evals' in terminate and evals >= terminate['evals'] \
