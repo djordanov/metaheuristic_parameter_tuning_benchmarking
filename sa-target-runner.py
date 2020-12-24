@@ -24,13 +24,12 @@ import re
 import subprocess
 import sys
 
-from pathlib import Path
 import numpy as np 
 import pandas as pd 
 
 import random
 import tsplib95
-from metaheuristics import sa, Eval
+from metaheuristics import sa
 
 if __name__=='__main__':
     if len(sys.argv) < 5:
@@ -46,11 +45,6 @@ if __name__=='__main__':
 
     # load problem
     problem: tsplib95.models.StandardProblem = tsplib95.load(instance)
-
-    # Set parameters
-    eval: Eval = Eval(problem)
-    initial_solution = list(range(problem.dimension))
-    random.shuffle(initial_solution)
 
     # Tuned parameters
     initial_temperature = None
@@ -71,16 +65,13 @@ if __name__=='__main__':
             target_runner_error("unknown parameter %s" % (param))
     
     # Run runner
-    optimaltour: tsplib95.models.StandardProblem = tsplib95.load(Path(instance).with_suffix('.opt.tour').absolute())
-    optimal_quality: int = problem.trace_tours(optimaltour.tours)[0]
 
-    result = sa(eval = eval, 
-                        initial_solution = initial_solution,
+    result = sa(instance = instance, 
                         initial_temperature = initial_temperature,
                         repetitions = repetitions,
                         cooling_factor = cooling_factor,
-                        terminate = {'noimprovement': 5})
-    print((result['quality'] - optimal_quality) / optimal_quality)
+                        terminate = {'noimprovement': {'temperatures': 5, 'accportion': 0.02}})
+    print(result['qualdev'])
 
     # for fixed-quality termination criterion 
     # if result['quality'] <= 0.05: # if quality termination condition reached

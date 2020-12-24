@@ -4,7 +4,7 @@ from pathlib import Path
 import random
 import time
 import tsplib95
-from metaheuristics import Eval, sa
+from metaheuristics import sa
 
 from rpy2 import robjects
 import numpy as np
@@ -47,30 +47,23 @@ def wotuning(runid: str, instancefolder: str, iterations: int):
                     continue
 
             problem = tsplib95.load(entry)
-            eval = Eval(problem)
-            optimaltour = tsplib95.load(entry.with_suffix('.opt.tour').absolute())
-            optimal_quality = problem.trace_tours(optimaltour.tours)[0]
-
+            
             # compute default parameter values
-            initial_solution = optimaltour.tours[0]
-            random.shuffle(initial_solution)
             distances = [ [problem.get_weight(a, b) for b in range(problem.dimension)] for a in range(problem.dimension) ]
             initial_temperature = np.array(distances).flatten().std()
             repetitions = problem.dimension * (problem.dimension - 1)
             cooling_factor = 0.95
 
             starttime = time.time()
-            result = sa(eval = eval, 
-                        initial_solution = initial_solution,
+            result = sa(instance = entry.absolute(), 
                         initial_temperature = initial_temperature,
                         repetitions = repetitions,
                         cooling_factor = cooling_factor,
-                        terminate = {'quality': optimal_quality * 1.05})
-            quality_deviation = (result['quality'] - optimal_quality) / optimal_quality
+                        terminate = {'noimprovement': {'temperatures': 5, 'accportion': 0.02}})
             
             results.tuning_budget.append(0)
             results.instances.append(entry.name)
-            results.qualities.append(quality_deviation)
+            results.qualities.append(result['qualdev'])
             results.evals.append(result['evals'])
             results.time.append(starttime - result['time'])
 
