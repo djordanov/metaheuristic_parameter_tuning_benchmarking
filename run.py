@@ -6,7 +6,7 @@ import time
 import tsplib95
 from metaheuristics import Eval, sa
 
-import rpy2.robjects.packages as rpackages
+from rpy2 import robjects
 import numpy as np
 import pandas as pd
 
@@ -76,10 +76,26 @@ def wotuning(runid: str, instancefolder: str, iterations: int):
 
     results.save()
 
-def irace(): # doesn't work for some reason
-    irace = rpackages.importr('irace')
-    parameters = irace.readParameters('./tuning/sa-parameters.txt')
-    scenario = irace.readScenario('./tuning/sa-scenario.txt')
-    irace.checkIraceScenario(scenario = scenario, parameters = parameters)
-    irace_results = irace.irace(scenario = scenario, parameters = parameters)
-    print("hi")
+def runirace(budgets: list): # doesn't work for some reason
+    elites = pd.DataFrame({})
+
+    robjects.r('library("irace")')
+    robjects.r('parameters = readParameters("tuning/sa-parameters.txt")')
+    robjects.r('scenario = readScenario(filename = "tuning/sa-scenario.txt")')
+
+    for budget in budgets:
+        robjects.r('scenario$maxExperiments = ' + str(budget))
+        robjects.r('checkIraceScenario(scenario = scenario, parameters = parameters)')
+        robjects.r('results = irace(scenario = scenario, parameters = parameters)')
+
+        # get parameter values of best configuration
+        colnames = list(robjects.r('names(results[1,])'))
+        values = np.array(robjects.r('results[1,]')).flatten()
+        best = {'budget': budget}
+
+        for i in range(len(colnames)):
+            if not colnames[i].startswith('.'):
+                best[colnames[i]] = values[i]
+        elites = elites.append(best, ignore_index = True)
+
+    elites.to_csv('data/runirace_elites.csv')
