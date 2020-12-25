@@ -13,7 +13,7 @@ import pandas as pd
 class Results:
 
     # static information
-    runid: str = None
+    runname: str = None
 
     # actual run results
     tuning_budget: list = []
@@ -23,21 +23,26 @@ class Results:
     time: list = []
 
     def __init__(self, runid):
-        self.runid = runid
+        self.runname = runid
 
     def save(self):
+
         df: pd.DataFrame = pd.DataFrame({
                 'tuning_budget': self.tuning_budget,
                 'instances': self.instances, 
-                'qualities': self.qualities, 
+                'qualdev': self.qualities, 
                 'evals': self.evals, 
                 'time': self.time
         })
-        df.to_csv(self.runid, index = False)
+        path = Path('data/' + self.runname)
+        if path.exists():
+            old: pd.DataFrame = pd.read_csv('data/' + self.runname)
+            df = old.append(df)
+        df.to_csv('data/' + self.runname, index = False)
 
-def wotuning(runid: str, instancefolder: str, iterations: int):
+def sa_test_config(name: str, instancefolder: str, iterations: int, budget_tuned: int, terminate: dict, config: dict = None):
     # run simulated annealing on all training- and test problems...
-    results = Results(runid)
+    results = Results(name)
     entries = Path(instancefolder)
 
     for _ in range(iterations):
@@ -45,21 +50,22 @@ def wotuning(runid: str, instancefolder: str, iterations: int):
 
             if entry.suffix != '.tsp':
                     continue
-
             problem = tsplib95.load(entry)
-            
-            # compute default parameter values
-            distances = [ [problem.get_weight(a, b) for b in range(problem.dimension)] for a in range(problem.dimension) ]
-            initial_temperature = np.array(distances).flatten().std()
-            repetitions = problem.dimension * (problem.dimension - 1)
-            cooling_factor = 0.95
+
+            if config == None:
+                # compute default parameter values
+                distances = [ [problem.get_weight(a, b) for b in range(problem.dimension)] for a in range(problem.dimension) ]
+                initial_temperature = np.array(distances).flatten().std()
+                repetitions = problem.dimension * (problem.dimension - 1)
+                cooling_factor = 0.95
+                config = {'initial_temperature': initial_temperature, 'repetitions': repetitions, 'cooling_factor': cooling_factor}
 
             starttime = time.time()
             result = sa(instance = entry.absolute(), 
-                        initial_temperature = initial_temperature,
-                        repetitions = repetitions,
-                        cooling_factor = cooling_factor,
-                        terminate = {'noimprovement': {'temperatures': 5, 'accportion': 0.02}})
+                        initial_temperature = config['initial_temperature'],
+                        repetitions = config['repetitions'],
+                        cooling_factor = config['cooling_factor'],
+                        terminate = terminate)
             
             results.tuning_budget.append(0)
             results.instances.append(entry.name)
@@ -92,3 +98,8 @@ def runirace(budgets: list): # doesn't work for some reason
         elites = elites.append(best, ignore_index = True)
 
     elites.to_csv('data/runirace_elites.csv')
+
+# generate 0tuning data
+name = '0tuning-evals2success_rate-qualdev0.05+noimprov'
+terminate = {'qualdev': 0.05, 'noimprovement': {'temperatures': 5, 'accportion': 0.02}}
+sa_test_config(name, 'instances/20nodes/test', iterations = 1, budget_tuned = 0, terminate = terminate)

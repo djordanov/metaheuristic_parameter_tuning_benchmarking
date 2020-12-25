@@ -87,7 +87,7 @@ def sa( instance: str,
             
             # check termination condition
             if 'evals' in terminate and evals >= terminate['evals'] \
-                or 'quality' in terminate and best_quality < optimal_quality * (1 + terminate['quality']) \
+                or 'qualdev' in terminate and best_quality < optimal_quality * (1 + terminate['qualdev']) \
                 or 'time' in terminate and time.time() - starttime > terminate['time'] \
                 or 'temperature' in terminate and current_temperature > terminate['temperature'] \
                 or 'noimprovement' in terminate \
