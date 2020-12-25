@@ -36,6 +36,7 @@ def sa( instance: str,
         repetitions: int, 
         cooling_factor: float, 
         terminate: dict) -> dict:
+    starttime = time.perf_counter()
 
     logging.debug('--- Starting simulated annealing ---')
     logging.debug('Initial Temperature: ' + str(initial_temperature))
@@ -48,7 +49,6 @@ def sa( instance: str,
     optimal_quality: int = problem.trace_tours(optimaltour.tours)[0]
 
     # setup
-    starttime = time.time()
     current_solution = list(range(problem.dimension))
     random.shuffle(current_solution)
     current_quality = problem.trace_tours([current_solution])[0]
@@ -88,12 +88,12 @@ def sa( instance: str,
             # check termination condition
             if 'evals' in terminate and evals >= terminate['evals'] \
                 or 'qualdev' in terminate and best_quality < optimal_quality * (1 + terminate['qualdev']) \
-                or 'time' in terminate and time.time() - starttime > terminate['time'] \
+                or 'time' in terminate and time.perf_counter() - starttime > terminate['time'] \
                 or 'temperature' in terminate and current_temperature > terminate['temperature'] \
                 or 'noimprovement' in terminate \
                     and count_temperatures_wo_improvement > terminate['noimprovement']['temperatures'] \
                     and count_accepted / evals < terminate['noimprovement']['accportion']:
-                return {'qualdev': (best_quality - optimal_quality) / optimal_quality, 'evals': evals, 'time': time.time() - starttime}
+                return {'qualdev': (best_quality - optimal_quality) / optimal_quality, 'evals': evals, 'time': time.perf_counter() - starttime}
 
         # cool down
         current_temperature *= cooling_factor
