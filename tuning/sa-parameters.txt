@@ -25,7 +25,19 @@
 ##    other parameters. This expression must return TRUE if the 
 ##    condition is satisfied, FALSE otherwise.
 
-# 1:                  2:                   3:       4:                5:
-initial_temperature  "--initial_temperature "       r (1, 1000) 
-repetitions          "--repetitions "               i (1, 1000) 
-cooling_factor       "--cooling_factor "            r (0.1, 1)
+# 1:                  2:                            3:       4:                5:
+initial_temperature  "--initial_temperature "       r        (1, 1000) 
+repetitions          "--repetitions "               i        (1, 1000) 
+cooling_factor       "--cooling_factor "            r        (0.1, 1)
+term_evals           "--term_evals "                c        (False)         
+term_evals_val       "--term_evals_val "            i        (10, 10000)       | term_evals == 'True'
+term_qualdev         "--term_qualdev "              c        (False)         
+term_qualdev_val     "--term_qualdev_val "          r        (0, 1)            | term_qualdev == 'True'
+term_time            "--term_time "                 c        (False)         
+term_time_val        "--term_time_val "             i        (0, 1000)         | term_time == 'True'
+term_temperature     "--term_temperature "          c        (False)         
+term_temperature_val "--term_temperature_val "      r        (0, 1000)         | term_temperature == 'True'
+term_noimprovement   "--term_noimprovement "        c        (True)         
+term_noimpr_temp_val "--term_noimpr_temp_val "      i        (0, 100)          | term_noimprovement == 'True'
+term_noimpr_accp_val "--term_noimpr_accp_val "      r        (0, 1)            | term_noimprovement == 'True'
+optimize             "--optimize "                  c        (qualdev, evals, time) 

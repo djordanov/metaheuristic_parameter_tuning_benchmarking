@@ -31,6 +31,77 @@ import random
 import tsplib95
 from metaheuristics import sa
 
+VALID_PARAMETERS = [
+    '--initial_temperature',
+    '--repetitions',
+    '--cooling_factor',
+    '--term_evals',
+    '--term_evals_val',
+    '--term_qualdev',
+    '--term_qualdev_val',
+    '--term_time',
+    '--term_time_val',
+    '--term_temperature',
+    '--term_temperature_val',
+    '--term_noimprovement',
+    '--term_noimpr_temp_val',
+    '--term_noimpr_accp_val', 
+    '--optimize'
+]
+
+# Useful function to print errors.
+def target_runner_error(msg):
+    now = datetime.datetime.now()
+    print(str(now) + " error: " + msg)
+    sys.exit(1)
+
+def create_config_terminate(cand_params: list) -> tuple:
+    params_as_dict = {}
+
+    # turn given parameters into dictionary form
+    while len(cand_params) > 1:
+        # Get and remove first and second elements.
+        param = cand_params.pop(0)
+        value = cand_params.pop(0)
+
+        if param not in VALID_PARAMETERS:
+            target_runner_error('Unknown parameter %s' % (param))
+
+        params_as_dict[param[2:]] = value
+    
+    # transform parameters
+    params_as_dict['initial_temperature'] = float(params_as_dict['initial_temperature'])
+    params_as_dict['repetitions'] = int(params_as_dict['repetitions'])
+    params_as_dict['cooling_factor'] = float(params_as_dict['cooling_factor'])
+
+    # separate out termination criteria
+    return separate_cfg_terminate(params_as_dict)
+
+def separate_cfg_terminate(params: dict) -> tuple:    
+    optimize = params.pop('optimize')
+    cfg = params.copy()
+    terminate = {}
+    for key in params:
+        if key.startswith('term_'):
+            if key == 'term_evals' and cfg['term_evals'] == 'True':
+                terminate['evals'] = int(cfg.pop('term_evals_val'))
+                cfg.pop('term_evals')
+            if key == 'term_qualdev' and cfg['term_qualdev'] == 'True':
+                terminate['qualdev'] = float(cfg.pop('term_qualdev_val'))
+                cfg.pop('term_qualdev')
+            if key == 'term_time' and cfg['term_time'] == 'True':
+                terminate['term_time'] = int(cfg.pop('term_time_val'))
+                cfg.pop('term_time')
+            if key == 'term_temperature' and cfg['term_temperature'] == 'True':
+                terminate['temperature'] = float(cfg.pop('term_temperature_val'))
+                cfg.pop('term_temperature')
+            if key == 'term_noimprovement' and cfg['term_noimprovement'] == 'True':
+                terminate['noimprovement'] = {}
+                terminate['noimprovement']['temperatures'] = float(cfg.pop('term_noimpr_temp_val'))
+                terminate['noimprovement']['accportion'] = float(cfg.pop('term_noimpr_accp_val'))
+                cfg.pop('term_noimprovement')             
+    return cfg, terminate, optimize
+
 if __name__=='__main__':
     if len(sys.argv) < 5:
         print("\nUsage: ./target-runner.py <configuration_id> <instance_id> <seed> <instance_path_name> <list of parameters>\n")
@@ -50,40 +121,15 @@ if __name__=='__main__':
     initial_temperature = None
     repetitions = None
     cooling_factor = None
-    
-    while len(cand_params) > 1:
-        # Get and remove first and second elements.
-        param = cand_params.pop(0)
-        value = cand_params.pop(0)
-        if param == "--initial_temperature":
-            initial_temperature = float(value)
-        elif param == "--repetitions":
-            repetitions = int(value)
-        elif param == "--cooling_factor":
-            cooling_factor = float(value)
-        else:
-            target_runner_error("unknown parameter %s" % (param))
-    
+    cfg, terminate, optimize = create_config_terminate(cand_params)
+                  
     # Run runner
-
     result = sa(instance = instance, 
-                        initial_temperature = initial_temperature,
-                        repetitions = repetitions,
-                        cooling_factor = cooling_factor,
-                        terminate = {'noimprovement': {'temperatures': 5, 'accportion': 0.02}})
-    print(result['qualdev'])
-
-    # for fixed-quality termination criterion 
-    # if result['quality'] <= 0.05: # if quality termination condition reached
-    #     print(result['evals'])
-    # else: # if timeout
-    #     print(100000)
+                        initial_temperature = cfg['initial_temperature'],
+                        repetitions = cfg['repetitions'],
+                        cooling_factor = cfg['cooling_factor'],
+                        terminate = terminate)
+    print(result[optimize])
     
     sys.exit(0)
-
-# Useful function to print errors.
-def target_runner_error(msg):
-    now = datetime.datetime.now()
-    print(str(now) + " error: " + msg)
-    sys.exit(1)
 
