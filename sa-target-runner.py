@@ -87,13 +87,13 @@ def separate_cfg_terminate(params: dict) -> tuple:
                 terminate['evals'] = int(cfg.pop('term_evals_val'))
                 cfg.pop('term_evals')
             if key == 'term_qualdev' and cfg['term_qualdev'] == 'True':
-                terminate['qualdev'] = float(cfg.pop('term_qualdev_val'))
+                terminate['qualdev'] = float(cfg.pop('term_qualdev_val')) / 100 # transform from percent into decimal proportion
                 cfg.pop('term_qualdev')
             if key == 'term_time' and cfg['term_time'] == 'True':
                 terminate['term_time'] = int(cfg.pop('term_time_val'))
                 cfg.pop('term_time')
             if key == 'term_temperature' and cfg['term_temperature'] == 'True':
-                terminate['temperature'] = float(cfg.pop('term_temperature_val'))
+                terminate['temperature'] = float(cfg.pop('term_temperature_val')) / 100 # transform from percent into decimal
                 cfg.pop('term_temperature')
             if key == 'term_noimprovement' and cfg['term_noimprovement'] == 'True':
                 terminate['noimprovement'] = {}
