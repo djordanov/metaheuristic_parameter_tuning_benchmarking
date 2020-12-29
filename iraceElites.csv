@@ -1,0 +1,3 @@
+,budget,cooling_factor,initial_temperature,optimize,repetitions,term_evals,term_evals_val,term_noimpr_accp_val,term_noimpr_temp_val,term_noimprovement,term_qualdev,term_qualdev_val,term_temperature,term_temperature_val,term_time,term_time_val
+0,300.0,0.3501,681.0103,qualdev,19.0,True,1000,-2147483648,-2147483648,False,False,-2147483648,False,-2147483648,False,-2147483648
+1,310.0,0.6654,109.7192,qualdev,212.0,True,1000,-2147483648,-2147483648,False,False,-2147483648,False,-2147483648,False,-2147483648

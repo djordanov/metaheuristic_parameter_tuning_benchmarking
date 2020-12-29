@@ -75,31 +75,35 @@ def sa_test_config(name: str, instancefolder: str, iterations: int, budget_tuned
 
     results.save()
 
-def runirace(budgets: list): # doesn't work for some reason
-    elites = pd.DataFrame({})
+def configsIrace(budget: int) -> dict: # doesn't work for some reason
 
     robjects.r('library("irace")')
     robjects.r('parameters = readParameters("tuning/sa-parameters.txt")')
     robjects.r('scenario = readScenario(filename = "tuning/sa-scenario.txt")')
 
-    for budget in budgets:
-        robjects.r('scenario$maxExperiments = ' + str(budget))
-        robjects.r('checkIraceScenario(scenario = scenario, parameters = parameters)')
-        robjects.r('results = irace(scenario = scenario, parameters = parameters)')
+    robjects.r('scenario$maxExperiments = ' + str(budget))
+    robjects.r('checkIraceScenario(scenario = scenario, parameters = parameters)')
+    robjects.r('results = irace(scenario = scenario, parameters = parameters)')
 
-        # get parameter values of best configuration
-        colnames = list(robjects.r('names(results[1,])'))
-        values = np.array(robjects.r('results[1,]')).flatten()
-        best = {'budget': budget}
+    # get parameter values of best configuration
+    colnames = list(robjects.r('names(results[1,])'))
+    values = np.array(robjects.r('results[1,]')).flatten()
+    elite = {'budget': budget}
 
-        for i in range(len(colnames)):
-            if not colnames[i].startswith('.'):
-                best[colnames[i]] = values[i]
-        elites = elites.append(best, ignore_index = True)
+    for i in range(len(colnames)):
+        if not colnames[i].startswith('.'):
+            elite[colnames[i]] = values[i]
 
-    elites.to_csv('data/runirace_elites.csv')
+    return elite
 
 # generate 0tuning data
-name = '0tuning-evals2success_rate-qualdev0.05+noimprov'
-terminate = {'qualdev': 0.05, 'noimprovement': {'temperatures': 5, 'accportion': 0.02}}
-sa_test_config(name, 'instances/20nodes/test', iterations = 1, budget_tuned = 0, terminate = terminate)
+# name = '0tuning_fixed-cost1000'
+# terminate = {'evals': 1000}
+# sa_test_config(name, 'instances/20nodes/test', iterations = 50, budget_tuned = 0, terminate = terminate)
+
+# generate tuned configs
+elites = pd.DataFrame()
+for budget in range(300, 311, 10): # TODO fix saving results
+    elite = configsIrace(budget) 
+    elites = elites.append(elite, ignore_index = True)
+elites.to_csv('iraceElites.csv')
