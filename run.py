@@ -35,6 +35,33 @@ class Results:
         })
         df.to_csv('data/' + self.runname, mode = 'a', index = False)
 
+def sa_run_test(instance: Path,  
+                terminate: dict = None, 
+                config: dict = None, 
+                ftrajectory = None):
+    problem = tsplib95.load(instance)
+
+    if config == None:
+        # compute default parameter values
+        distances = [ [problem.get_weight(a, b) for b in range(problem.dimension)] for a in range(problem.dimension) ]
+        initial_temperature = np.array(distances).flatten().std()
+        repetitions = problem.dimension * (problem.dimension - 1)
+        cooling_factor = 0.95
+        config = {'initial_temperature': initial_temperature, 'repetitions': repetitions, 'cooling_factor': cooling_factor}
+    if terminate == None:
+        # default termination condition
+        terminate = {'noimprovement': {'temperatures': 5, 'accportion': 0.02}}
+
+    result = sa(instance = instance.absolute(), 
+                initial_temperature = config['initial_temperature'],
+                repetitions = config['repetitions'],
+                cooling_factor = config['cooling_factor'],
+                terminate = terminate,
+                ftrajectory = ftrajectory)
+    return result
+    
+    
+
 def sa_test_config( name: str, 
                     instancefolder: str, 
                     iterations: int, 
@@ -51,32 +78,13 @@ def sa_test_config( name: str,
 
             if entry.suffix != '.tsp':
                     continue
-            problem = tsplib95.load(entry)
-
-            if config == None:
-                # compute default parameter values
-                distances = [ [problem.get_weight(a, b) for b in range(problem.dimension)] for a in range(problem.dimension) ]
-                initial_temperature = np.array(distances).flatten().std()
-                repetitions = problem.dimension * (problem.dimension - 1)
-                cooling_factor = 0.95
-                config = {'initial_temperature': initial_temperature, 'repetitions': repetitions, 'cooling_factor': cooling_factor}
-            if terminate == None:
-                # default termination condition
-                terminate = {'noimprovement': {'temperatures': 5, 'accportion': 0.02}}
-
-            starttime = time.time()
-            result = sa(instance = entry.absolute(), 
-                        initial_temperature = config['initial_temperature'],
-                        repetitions = config['repetitions'],
-                        cooling_factor = config['cooling_factor'],
-                        terminate = terminate,
-                        ftrajectory = ftrajectory)
             
+            result = sa_run_test(entry, terminate = terminate, config = config, ftrajectory = ftrajectory)
             results.tuning_budget.append(0)
             results.instances.append(entry.name)
             results.qualities.append(result['qualdev'])
             results.evals.append(result['evals'])
-            results.time.append(starttime - result['time'])
+            results.time.append(result['time'])
 
     results.save()
 
@@ -110,8 +118,8 @@ sa_test_config('trajectoryrun', 'instances/20nodes/test', 1, 0, terminate = None
 # sa_test_config(name, 'instances/20nodes/test', iterations = 50, budget_tuned = 0, terminate = terminate)
 
 # generate tuned configs
-elites = pd.DataFrame()
-for budget in range(300, 311, 10): # TODO fix saving results
-    elite = configsIrace(budget) 
-    elites = elites.append(elite, ignore_index = True)
-elites.to_csv('iraceElites.csv', index = False)
+# elites = pd.DataFrame()
+# for budget in range(300, 311, 10): # TODO fix saving results
+#     elite = configsIrace(budget) 
+#     elites = elites.append(elite, ignore_index = True)
+# elites.to_csv('iraceElites.csv', index = False)
