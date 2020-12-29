@@ -35,13 +35,11 @@ def sa( instance: str,
         initial_temperature: float, 
         repetitions: int, 
         cooling_factor: float, 
-        terminate: dict) -> dict:
+        terminate: dict,
+        ftrajectory: Path = None) -> dict:
     starttime = time.perf_counter()
 
-    logging.debug('--- Starting simulated annealing ---')
-    logging.debug('Initial Temperature: ' + str(initial_temperature))
-    logging.debug('Repetitions: ' + str(repetitions))
-    logging.debug('Cooling Factor: ' + str(cooling_factor))
+    trajectory = {'qualdev': [], 'evals': [], 'time': []} if ftrajectory != None else None
 
     # problem: tsplib95.models.StandardProblem
     problem: tsplib95.models.StandardProblem = tsplib95.load(instance)
@@ -69,12 +67,6 @@ def sa( instance: str,
             neighbor_quality = problem.trace_tours([neighbor_solution])[0]
             evals += 1
 
-            logging.debug('------')
-            logging.debug('Current Solution: ' + str(current_solution))
-            logging.debug('Current Quality: ' + str(current_quality))
-            logging.debug('Current Temperature: ' + str(current_temperature))
-            logging.debug('------')
-
             # accept neighbor if 
             if accept(current_quality, neighbor_quality, current_temperature):
                 current_solution = neighbor_solution
@@ -85,6 +77,11 @@ def sa( instance: str,
                     best_quality = current_quality
                     count_temperatures_wo_improvement = 0    
             
+            if trajectory != None:
+                trajectory['qualdev'].append((best_quality - optimal_quality) / optimal_quality)
+                trajectory['evals'].append(evals)
+                trajectory['time'].append(time.perf_counter() - starttime)
+
             # check termination condition
             if 'evals' in terminate and evals >= terminate['evals'] \
                 or 'qualdev' in terminate and best_quality < optimal_quality * (1 + terminate['qualdev']) \
@@ -93,6 +90,10 @@ def sa( instance: str,
                 or 'noimprovement' in terminate \
                     and count_temperatures_wo_improvement > terminate['noimprovement']['temperatures'] \
                     and count_accepted / evals < terminate['noimprovement']['accportion']:
+                
+                if trajectory != None:
+                    pd.DataFrame(trajectory).to_csv(ftrajectory.absolute(), mode = 'a', index = None)
+
                 return {'qualdev': (best_quality - optimal_quality) / optimal_quality, 'evals': evals, 'time': time.perf_counter() - starttime}
 
         # cool down

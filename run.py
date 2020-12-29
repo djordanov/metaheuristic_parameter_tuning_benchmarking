@@ -26,7 +26,6 @@ class Results:
         self.runname = runid
 
     def save(self):
-
         df: pd.DataFrame = pd.DataFrame({
                 'tuning_budget': self.tuning_budget,
                 'instances': self.instances, 
@@ -34,13 +33,15 @@ class Results:
                 'evals': self.evals, 
                 'time': self.time
         })
-        path = Path('data/' + self.runname)
-        if path.exists():
-            old: pd.DataFrame = pd.read_csv('data/' + self.runname)
-            df = old.append(df)
-        df.to_csv('data/' + self.runname, index = False)
+        df.to_csv('data/' + self.runname, mode = 'a', index = False)
 
-def sa_test_config(name: str, instancefolder: str, iterations: int, budget_tuned: int, terminate: dict, config: dict = None):
+def sa_test_config( name: str, 
+                    instancefolder: str, 
+                    iterations: int, 
+                    budget_tuned: int, 
+                    terminate: dict = None, 
+                    config: dict = None, 
+                    ftrajectory = None):
     # run simulated annealing on all training- and test problems...
     results = Results(name)
     entries = Path(instancefolder)
@@ -59,13 +60,17 @@ def sa_test_config(name: str, instancefolder: str, iterations: int, budget_tuned
                 repetitions = problem.dimension * (problem.dimension - 1)
                 cooling_factor = 0.95
                 config = {'initial_temperature': initial_temperature, 'repetitions': repetitions, 'cooling_factor': cooling_factor}
+            if terminate == None:
+                # default termination condition
+                terminate = {'noimprovement': {'temperatures': 5, 'accportion': 0.02}}
 
             starttime = time.time()
             result = sa(instance = entry.absolute(), 
                         initial_temperature = config['initial_temperature'],
                         repetitions = config['repetitions'],
                         cooling_factor = config['cooling_factor'],
-                        terminate = terminate)
+                        terminate = terminate,
+                        ftrajectory = ftrajectory)
             
             results.tuning_budget.append(0)
             results.instances.append(entry.name)
@@ -96,6 +101,9 @@ def configsIrace(budget: int) -> dict: # doesn't work for some reason
 
     return elite
 
+# generate trajectory data
+sa_test_config('trajectoryrun', 'instances/20nodes/test', 1, 0, terminate = None, config = None, ftrajectory = Path('def-Traj-SA-1It'))
+
 # generate 0tuning data
 # name = '0tuning_fixed-cost1000'
 # terminate = {'evals': 1000}
@@ -106,4 +114,4 @@ elites = pd.DataFrame()
 for budget in range(300, 311, 10): # TODO fix saving results
     elite = configsIrace(budget) 
     elites = elites.append(elite, ignore_index = True)
-elites.to_csv('iraceElites.csv')
+elites.to_csv('iraceElites.csv', index = False)

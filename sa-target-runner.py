@@ -128,7 +128,8 @@ if __name__=='__main__':
                         initial_temperature = cfg['initial_temperature'],
                         repetitions = cfg['repetitions'],
                         cooling_factor = cfg['cooling_factor'],
-                        terminate = terminate)
+                        terminate = terminate,
+                        ftrajectory = None)
     print(result[optimize])
     
     sys.exit(0)
