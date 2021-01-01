@@ -32,21 +32,21 @@ import tsplib95
 from metaheuristics import sa
 
 VALID_PARAMETERS = [
-    '--initial_temperature',
-    '--repetitions',
-    '--cooling_factor',
-    '--term_evals',
-    '--term_evals_val',
-    '--term_qualdev',
-    '--term_qualdev_val',
-    '--term_time',
-    '--term_time_val',
-    '--term_temperature',
-    '--term_temperature_val',
-    '--term_noimprovement',
-    '--term_noimpr_temp_val',
-    '--term_noimpr_accp_val', 
-    '--optimize'
+    'initial_temperature',
+    'repetitions',
+    'cooling_factor',
+    'term_evals',
+    'term_evals_val',
+    'term_qualdev',
+    'term_qualdev_val',
+    'term_time',
+    'term_time_val',
+    'term_temperature',
+    'term_temperature_val',
+    'term_noimprovement',
+    'term_noimpr_temp_val',
+    'term_noimpr_accp_val', 
+    'optimize'
 ]
 
 # Useful function to print errors.
@@ -55,25 +55,27 @@ def target_runner_error(msg):
     print(str(now) + " error: " + msg)
     sys.exit(1)
 
-def create_config_terminate(cand_params: list) -> tuple:
+def create_config_terminate_optimize(cand_params: list) -> tuple:
     params_as_dict = {}
-
+    
     # turn given parameters into dictionary form
     while len(cand_params) > 1:
         # Get and remove first and second elements.
         param = cand_params.pop(0)
+        if param[:2] == '--':
+            param = param[2:]
         value = cand_params.pop(0)
 
         if param not in VALID_PARAMETERS:
             target_runner_error('Unknown parameter %s' % (param))
 
-        params_as_dict[param[2:]] = value
+        params_as_dict[param] = value
     
     # transform parameters
     params_as_dict['initial_temperature'] = float(params_as_dict['initial_temperature'])
     params_as_dict['repetitions'] = int(params_as_dict['repetitions'])
     params_as_dict['cooling_factor'] = float(params_as_dict['cooling_factor'])
-
+    
     # separate out termination criteria
     return separate_cfg_terminate(params_as_dict)
 
@@ -81,21 +83,22 @@ def separate_cfg_terminate(params: dict) -> tuple:
     optimize = params.pop('optimize')
     cfg = params.copy()
     terminate = {}
+
     for key in params:
         if key.startswith('term_'):
-            if key == 'term_evals' and cfg['term_evals'] == 'True':
+            if key == 'term_evals' and cfg[key] == 'True':
                 terminate['evals'] = int(cfg.pop('term_evals_val'))
                 cfg.pop('term_evals')
-            if key == 'term_qualdev' and cfg['term_qualdev'] == 'True':
+            if key == 'term_qualdev' and cfg[key] == 'True':
                 terminate['qualdev'] = float(cfg.pop('term_qualdev_val')) / 100 # transform from percent into decimal proportion
                 cfg.pop('term_qualdev')
-            if key == 'term_time' and cfg['term_time'] == 'True':
+            if key == 'term_time' and cfg[key] == 'True':
                 terminate['term_time'] = int(cfg.pop('term_time_val'))
                 cfg.pop('term_time')
-            if key == 'term_temperature' and cfg['term_temperature'] == 'True':
+            if key == 'term_temperature' and cfg[key] == 'True':
                 terminate['temperature'] = float(cfg.pop('term_temperature_val')) / 100 # transform from percent into decimal
                 cfg.pop('term_temperature')
-            if key == 'term_noimprovement' and cfg['term_noimprovement'] == 'True':
+            if key == 'term_noimprovement' and cfg[key] == 'True':
                 terminate['noimprovement'] = {}
                 terminate['noimprovement']['temperatures'] = float(cfg.pop('term_noimpr_temp_val'))
                 terminate['noimprovement']['accportion'] = float(cfg.pop('term_noimpr_accp_val'))
@@ -121,7 +124,7 @@ if __name__=='__main__':
     initial_temperature = None
     repetitions = None
     cooling_factor = None
-    cfg, terminate, optimize = create_config_terminate(cand_params)
+    cfg, terminate, optimize = create_config_terminate_optimize(cand_params)
                   
     # Run runner
     result = sa(instance = instance, 
@@ -133,4 +136,3 @@ if __name__=='__main__':
     print(result[optimize])
     
     sys.exit(0)
-

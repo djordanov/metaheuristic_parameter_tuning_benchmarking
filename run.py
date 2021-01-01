@@ -5,6 +5,7 @@ import random
 import time
 import tsplib95
 from metaheuristics import sa
+import wrapper_irace_sa
 
 from rpy2 import robjects
 import numpy as np
@@ -88,13 +89,13 @@ def sa_test_config( name: str,
 
     results.save()
 
-def configsIrace(budget: int) -> dict: # doesn't work for some reason
+def iraceTune(budget: int) -> dict:
 
     robjects.r('library("irace")')
     robjects.r('parameters = readParameters("tuning/sa-parameters.txt")')
     robjects.r('scenario = readScenario(filename = "tuning/sa-scenario.txt")')
-
     robjects.r('scenario$maxExperiments = ' + str(budget))
+    
     robjects.r('checkIraceScenario(scenario = scenario, parameters = parameters)')
     robjects.r('results = irace(scenario = scenario, parameters = parameters)')
 
@@ -109,8 +110,14 @@ def configsIrace(budget: int) -> dict: # doesn't work for some reason
 
     return elite
 
-# generate trajectory data
-sa_test_config('trajectoryrun', 'instances/20nodes/test', 1, 0, terminate = None, config = None, ftrajectory = Path('def-Traj-SA-1It'))
+# metaheuristic default trajectory data
+# sa_test_config('trajectoryrun', 'instances/20nodes/test', 5, 0, terminate = None, config = None, ftrajectory = Path('def-Traj-SA (2)'))
+
+# metaheuristic tuned for different budget trajectory data
+# tunebudget = 10000
+# cfg500 = iraceTune(tunebudget)
+
+# generate irace default trajectory data
 
 # generate 0tuning data
 # name = '0tuning_fixed-cost1000'
@@ -120,6 +127,22 @@ sa_test_config('trajectoryrun', 'instances/20nodes/test', 1, 0, terminate = None
 # generate tuned configs
 # elites = pd.DataFrame()
 # for budget in range(300, 311, 10): # TODO fix saving results
-#     elite = configsIrace(budget) 
+#     elite = iraceTune(budget) 
 #     elites = elites.append(elite, ignore_index = True)
 # elites.to_csv('iraceElites.csv', index = False)
+
+# saved irace configurations to usable parameter configurations and termination criteria
+df: pd.DataFrame = pd.read_csv('data/iraceElites.csv')
+for i in range(0, len(df)):
+    row: pd.Series = df.iloc[i]     # select first row
+    budget = row['budget']
+    row = row.drop('budget')
+
+    # build parameter - value list analogous to the one coming from irace
+    candparams = []
+    for i in range(0, len(row)):
+        candparams.append(row.index[i])
+        candparams.append(row.values[i])
+
+    cfg, terminate, optimize = wrapper_irace_sa.create_config_terminate_optimize(candparams)
+    print((cfg, terminate, optimize))

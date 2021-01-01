@@ -43,7 +43,7 @@ trainInstancesFile = "../instances/20nodes/trainInstancesFile"
 
 ## Script called for each configuration that executes the target algorithm
 ## to be tuned. See templates.
-targetRunner = "../sa-target-runner.py"
+targetRunner = "../wrapper_irace_sa.py"
 
 ## Number of times to retry a call to targetRunner if the call failed.
 # targetRunnerRetries = 0
