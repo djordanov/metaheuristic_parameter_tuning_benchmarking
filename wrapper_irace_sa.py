@@ -41,8 +41,6 @@ VALID_PARAMETERS = [
     'term_qualdev_val',
     'term_time',
     'term_time_val',
-    'term_temperature',
-    'term_temperature_val',
     'term_noimprovement',
     'term_noimpr_temp_val',
     'term_noimpr_accp_val', 
@@ -90,14 +88,11 @@ def separate_cfg_terminate(params: dict) -> tuple:
                 terminate['evals'] = int(cfg.pop('term_evals_val'))
                 cfg.pop('term_evals')
             if key == 'term_qualdev' and cfg[key] == 'True':
-                terminate['qualdev'] = float(cfg.pop('term_qualdev_val')) / 100 # transform from percent into decimal proportion
+                terminate['qualdev'] = float(cfg.pop('term_qualdev_val')) 
                 cfg.pop('term_qualdev')
             if key == 'term_time' and cfg[key] == 'True':
-                terminate['term_time'] = int(cfg.pop('term_time_val'))
+                terminate['time'] = int(cfg.pop('term_time_val'))
                 cfg.pop('term_time')
-            if key == 'term_temperature' and cfg[key] == 'True':
-                terminate['temperature'] = float(cfg.pop('term_temperature_val')) / 100 # transform from percent into decimal
-                cfg.pop('term_temperature')
             if key == 'term_noimprovement' and cfg[key] == 'True':
                 terminate['noimprovement'] = {}
                 terminate['noimprovement']['temperatures'] = float(cfg.pop('term_noimpr_temp_val'))
