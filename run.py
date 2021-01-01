@@ -89,13 +89,30 @@ def sa_test_config( name: str,
 
     results.save()
 
-def iraceTune(budget: int) -> dict:
+def iraceTune(budget: int, terminate: dict, optimize: str) -> dict:
 
     robjects.r('library("irace")')
     robjects.r('parameters = readParameters("tuning/sa-parameters.txt")')
     robjects.r('scenario = readScenario(filename = "tuning/sa-scenario.txt")')
+
+    # set tuning budget
     robjects.r('scenario$maxExperiments = ' + str(budget))
     
+    # set optimize parameter
+    robjects.r('parameters$domain$optimize = \"' + optimize + '\"')
+
+    # set termination condition
+    for key in terminate:
+        if key == 'noimprovement':
+            robjects.r('parameters$domain$term_noimprovement = \"True\"')
+            robjects.r('parameters$domain$term_noimpr_temp_val = ' + str(terminate['noimprovement']['temperatures']))
+            robjects.r('parameters$domain$term_noimpr_accp_val = ' + str(terminate['noimprovement']['accportion']))
+        else:
+            boolparam = 'term_' + key
+            valparam = boolparam + '_val'
+            robjects.r('parameters$domain$' + boolparam + ' = \"True\"')
+            robjects.r('parameters$domain$' + valparam + ' = ' + str(terminate[key]))
+
     robjects.r('checkIraceScenario(scenario = scenario, parameters = parameters)')
     robjects.r('results = irace(scenario = scenario, parameters = parameters)')
 
