@@ -1,0 +1,25 @@
+NAME : rnd48_20.tsp.tsp.optbc.tour
+TYPE : TOUR
+DIMENSION : 20
+TOUR_SECTION
+0
+11
+12
+18
+17
+6
+2
+8
+10
+16
+13
+4
+19
+5
+1
+3
+14
+9
+7
+15
+-1

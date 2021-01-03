@@ -5,4 +5,7 @@ instances/20nodes/*
 instances/100nodes/*
 .vscode/*
 macode.Rproj
-.RData
+.*
+irace.Rdata
+acviz.py
+data/*
