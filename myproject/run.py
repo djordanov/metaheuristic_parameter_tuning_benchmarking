@@ -11,12 +11,9 @@ import pandas as pd
 import tsplib95
 
 from myproject.metaheuristic.sa import sa
-import myproject.wrapper.irace_sa
+import myproject.wrapper.irace_sa as irace_sa
 
 class Results:
-
-    # static information
-    runname: str = None
 
     # actual run results
     tuning_budget: list = []
@@ -25,10 +22,7 @@ class Results:
     evals: list = []
     time: list = []
 
-    def __init__(self, runid):
-        self.runname = runid
-
-    def save(self):
+    def save(self, fpath: Path):
         df: pd.DataFrame = pd.DataFrame({
                 'tuning_budget': self.tuning_budget,
                 'instances': self.instances, 
@@ -36,7 +30,8 @@ class Results:
                 'evals': self.evals, 
                 'time': self.time
         })
-        df.to_csv('data/' + self.runname, mode = 'a', index = False)
+        mode = 'a' if fpath.exists() else 'w+'
+        df.to_csv(fpath.absolute(), mode = mode, index = False)
 
 def sa_run_test(instance: Path,  
                 terminate: dict = None, 
@@ -65,7 +60,7 @@ def sa_run_test(instance: Path,
     
     
 
-def sa_test_config( name: str, 
+def sa_test_config( fname: str, 
                     instancefolder: str, 
                     iterations: int, 
                     budget_tuned: int, 
@@ -73,7 +68,7 @@ def sa_test_config( name: str,
                     config: dict = None, 
                     fconvergence = None):
     # run simulated annealing on all training- and test problems...
-    results = Results(name)
+    results = Results()
     entries = Path(instancefolder)
 
     for _ in range(iterations):
@@ -89,7 +84,7 @@ def sa_test_config( name: str,
             results.evals.append(result['evals'])
             results.time.append(result['time'])
 
-    results.save()
+    results.save(Path('myproject/data/' + fname))
 
 def iraceTune(budget: int, terminate: dict, optimize: str) -> dict:
 
@@ -129,27 +124,25 @@ def iraceTune(budget: int, terminate: dict, optimize: str) -> dict:
 
     return elite
 
-# metaheuristic default convergence data
-# sa_test_config('convergencerun', 'myproject/instances/20nodes/test', iterations = 1, budget_tuned = 0, 
-#                terminate = None, config = None, fconvergence = Path('def-Traj-SA (2)'))
+# default convergence
+sa_test_config('cfgdefaultt0', 'myproject/instances/20nodes/test', iterations = 5, budget_tuned = 0, 
+                terminate = None, config = None, fconvergence = Path('myproject/data/saconv-cfgdefaultt0'))
 
-# metaheuristic tuned for different budget convergence data
-cfge2000t10000oQD = iraceTune(budget = 10000, terminate = {'evals': 2000}, optimize = 'qualdev')
-# os.rename(r'irace.Rdata', r'irace.Rdata.e2000t100000oQD')
-# print(cfge2000t10000oQD)
+# tune
+# evals = 2000
+# budget = 10000
+# optimize = 'qualdev'
+# name = 'e' + str(evals) + 't' + str(budget) + 'o' + str(optimize)
+# elite = iraceTune(budget = budget, terminate = {'evals': evals}, optimize = optimize)
+# os.rename(r'irace.Rdata', r'data/irace.Rdata.' + name)
+# print(elite)
 
-# test metaheuristic elites
-sa_test_config(name = 'e500t10000oQD', instancefolder = 'instances/20nodes/test', iterations = 50, 
-               budget_tuned = 10000, terminate = None, 
-               config = {'initial_temperature': 54.9736, 'repetitions': 154, 'cooling_factor': 0.12},
-               fconvergence = Path('data/test-e500t10000oQD')) 
-
-# generate irace default convergence data
-
-# generate 0tuning data
-# name = '0tuning_fixed-cost1000'
-# terminate = {'evals': 1000}
-# sa_test_config(name, 'instances/20nodes/test', iterations = 50, budget_tuned = 0, terminate = terminate)
+# run tuned cfg
+# config, terminate, optimize = irace_sa.dict2params(elite) 
+# sa_test_config(fname = name, 
+#                instancefolder = 'myproject/instances/20nodes/test', iterations = 50, 
+#                budget_tuned = budget, terminate = None, config = config,
+#                fconvergence = Path('myproject/data/test-' + name)) 
 
 # generate tuned configs
 # elites = pd.DataFrame()

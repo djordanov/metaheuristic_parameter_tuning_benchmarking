@@ -56,7 +56,15 @@ def target_runner_error(msg):
     print(str(now) + " error: " + msg)
     sys.exit(1)
 
-def create_config_terminate_optimize(cand_params: list) -> tuple:
+def dict2params(asdict):
+    cand_params = []
+    for i in range(0, len(asdict)):
+        cand_params.append(asdict.index[i])
+        cand_params.append(asdict.values[i])
+    
+    return iraceparams2cfg_term_opt(cand_params)
+
+def iraceparams2cfg_term_opt(cand_params: list) -> tuple:
     params_as_dict = {}
     
     # turn given parameters into dictionary form
@@ -78,9 +86,9 @@ def create_config_terminate_optimize(cand_params: list) -> tuple:
     params_as_dict['cooling_factor'] = float(params_as_dict['cooling_factor'])
     
     # separate out termination criteria
-    return separate_cfg_terminate(params_as_dict)
+    return separate_cfg_term(params_as_dict)
 
-def separate_cfg_terminate(params: dict) -> tuple:    
+def separate_cfg_term(params: dict) -> tuple:    
     optimize = params.pop('optimize')
     cfg = params.copy()
     terminate = {}
@@ -122,7 +130,7 @@ if __name__=='__main__':
     initial_temperature = None
     repetitions = None
     cooling_factor = None
-    cfg, terminate, optimize = create_config_terminate_optimize(cand_params)
+    cfg, terminate, optimize = iraceparams2cfg_term_opt(cand_params)
                   
     # Run runner
     result = sa(instance = instance, 
