@@ -11,6 +11,7 @@ import pandas as pd
 import tsplib95
 
 from myproject.metaheuristic.sa import sa
+from myproject.metaheuristic.aco import aco
 import myproject.wrapper.irace_sa as irace_sa
 
 class Results:
@@ -51,9 +52,7 @@ def sa_run_test(instance: Path,
         terminate = {'noimprovement': {'temperatures': 5, 'accportion': 0.02}}
 
     result = sa(instance = instance.absolute(), 
-                initial_temperature = config['initial_temperature'],
-                repetitions = config['repetitions'],
-                cooling_factor = config['cooling_factor'],
+                cfg = config,
                 terminate = terminate,
                 fconvergence = fconvergence)
     return result
@@ -89,8 +88,8 @@ def sa_test_config( fname: str,
 def iraceTune(budget: int, terminate: dict, optimize: str) -> dict:
 
     robjects.r('library("irace")')
-    robjects.r('parameters = readParameters("myproject/tuning/sa-parameters.txt")')
-    robjects.r('scenario = readScenario(filename = "myproject/tuning/sa-scenario.txt")')
+    robjects.r('parameters = readParameters("myproject/tuning-settings/sa-parameters.txt")')
+    robjects.r('scenario = readScenario(filename = "myproject/tuning-settings/sa-scenario.txt")')
 
     # set tuning budget
     robjects.r('scenario$maxExperiments = ' + str(budget))
@@ -124,13 +123,21 @@ def iraceTune(budget: int, terminate: dict, optimize: str) -> dict:
 
     return elite
 
+# test sa
+# sa_test_config('cfgdefaultt0', 'myproject/instances/20nodes/test', iterations = 5, budget_tuned = 0, 
+#                 terminate = {'evals': 100})
+
+# test aco
+# terminate = {'evals': 10000}
+# aco('myproject/instances/20nodes/rnd0_20.tsp', 1, 5, 0.5, 0.5, 50, 0.8, terminate, Path('acoconvergence'))
+
 # default convergence
 sa_test_config('cfgdefaultt0', 'myproject/instances/20nodes/test', iterations = 5, budget_tuned = 0, 
-                terminate = None, config = None, fconvergence = Path('myproject/data/saconv-cfgdefaultt0'))
+            terminate = None, config = None, fconvergence = Path('myproject/data/saconv-cfgdefaultt0'))
 
 # tune
-# evals = 2000
-# budget = 10000
+# evals = 100
+# budget = 300
 # optimize = 'qualdev'
 # name = 'e' + str(evals) + 't' + str(budget) + 'o' + str(optimize)
 # elite = iraceTune(budget = budget, terminate = {'evals': evals}, optimize = optimize)

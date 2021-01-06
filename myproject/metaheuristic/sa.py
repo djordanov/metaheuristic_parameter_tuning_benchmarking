@@ -30,9 +30,7 @@ def accept(current_quality: float, neighbor_quality: float, current_temperature:
     return False
 
 def sa( instance: str, 
-        initial_temperature: float, 
-        repetitions: int, 
-        cooling_factor: float, 
+        cfg: dict, 
         terminate: dict,
         fconvergence: Path = None) -> dict:
     starttime = time.perf_counter()
@@ -50,7 +48,7 @@ def sa( instance: str,
     current_quality = problem.trace_tours([current_solution])[0]
     evals = 1
 
-    current_temperature = initial_temperature
+    current_temperature = cfg['initial_temperature']
     best_quality = current_quality
     count_accepted = 0
     count_temperatures_wo_improvement = 0
@@ -63,7 +61,7 @@ def sa( instance: str,
                     and count_accepted / evals < terminate['noimprovement']['accportion']):
         
         count_temperatures_wo_improvement += 1
-        for _ in range(repetitions):
+        for _ in range(cfg['repetitions']):
 
             # get neighbor
             neighbor_solution = random_n2opt(current_solution)
@@ -86,7 +84,7 @@ def sa( instance: str,
                 convergence['time'].append(time.perf_counter() - starttime)
 
         # cool down
-        current_temperature *= cooling_factor
+        current_temperature *= cfg['cooling_factor']
         current_temperature = max(current_temperature, 0.00001) # avoid rounding errors
     if convergence != None:
         print_headers: bool = False if fconvergence.exists() else True

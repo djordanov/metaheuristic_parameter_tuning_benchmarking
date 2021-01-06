@@ -35,6 +35,7 @@ import myproject.metaheuristic.sa
 from myproject.metaheuristic.sa import sa
 
 VALID_PARAMETERS = [
+    'algorithm',
     'initial_temperature',
     'repetitions',
     'cooling_factor',
@@ -62,9 +63,9 @@ def dict2params(asdict):
         cand_params.append(asdict.index[i])
         cand_params.append(asdict.values[i])
     
-    return iraceparams2cfg_term_opt(cand_params)
+    return iraceparams2dict(cand_params)
 
-def iraceparams2cfg_term_opt(cand_params: list) -> tuple:
+def iraceparams2dict(cand_params: list) -> dict:
     params_as_dict = {}
     
     # turn given parameters into dictionary form
@@ -76,19 +77,21 @@ def iraceparams2cfg_term_opt(cand_params: list) -> tuple:
         value = cand_params.pop(0)
 
         if param not in VALID_PARAMETERS:
-            target_runner_error('Unknown parameter %s' % (param))
+            print(VALID_PARAMETERS)
+            target_runner_error('Unknown parameter \"%s\"' % (param))
 
         params_as_dict[param] = value
-    
+
     # transform parameters
-    params_as_dict['initial_temperature'] = float(params_as_dict['initial_temperature'])
-    params_as_dict['repetitions'] = int(params_as_dict['repetitions'])
-    params_as_dict['cooling_factor'] = float(params_as_dict['cooling_factor'])
+    if params_as_dict['algorithm'] == 'sa':
+        params_as_dict['initial_temperature'] = float(params_as_dict['initial_temperature'])
+        params_as_dict['repetitions'] = int(params_as_dict['repetitions'])
+        params_as_dict['cooling_factor'] = float(params_as_dict['cooling_factor'])
     
     # separate out termination criteria
-    return separate_cfg_term(params_as_dict)
+    return params_as_dict
 
-def separate_cfg_term(params: dict) -> tuple:    
+def separate_cfg_term_opt(params: dict) -> tuple:    
     optimize = params.pop('optimize')
     cfg = params.copy()
     terminate = {}
@@ -127,18 +130,14 @@ if __name__=='__main__':
     problem: tsplib95.models.StandardProblem = tsplib95.load(instance)
 
     # Tuned parameters
-    initial_temperature = None
-    repetitions = None
-    cooling_factor = None
-    cfg, terminate, optimize = iraceparams2cfg_term_opt(cand_params)
+    params_as_dict = iraceparams2dict(cand_params)
+    algorithm = params_as_dict.pop('algorithm')
+    cfg, terminate, optimize = separate_cfg_term_opt(params_as_dict)
                   
     # Run runner
-    result = sa(instance = instance, 
-                        initial_temperature = cfg['initial_temperature'],
-                        repetitions = cfg['repetitions'],
-                        cooling_factor = cfg['cooling_factor'],
-                        terminate = terminate,
-                        fconvergence = None)
+    result = None
+    if algorithm == 'sa':
+        result = sa(instance = instance, cfg = cfg, terminate = terminate, fconvergence = None)
     print(result[optimize])
     
     sys.exit(0)
