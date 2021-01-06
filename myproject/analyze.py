@@ -20,7 +20,7 @@ def convergence(df: pd.DataFrame):
 
 def evals2time(df: pd.DataFrame):
     # decimate the data
-    dfs = df.sample(100000)
+    dfs = df.sample(100000) if len(df) > 100000 else df
 
     # linear regression ...
     y = dfs.time
