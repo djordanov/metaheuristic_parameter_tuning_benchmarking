@@ -1,4 +1,3 @@
-import typing
 import logging
 
 from pathlib import Path
@@ -30,7 +29,6 @@ def accept(current_quality: float, neighbor_quality: float, current_temperature:
 
     return False
 
-
 def sa( instance: str, 
         initial_temperature: float, 
         repetitions: int, 
@@ -57,9 +55,14 @@ def sa( instance: str,
     count_accepted = 0
     count_temperatures_wo_improvement = 0
 
-    while True:
+    while not ('evals' in terminate and evals >= terminate['evals'] \
+                or 'qualdev' in terminate and best_quality < optimal_quality * (1 + terminate['qualdev']) \
+                or 'time' in terminate and time.perf_counter() - starttime > terminate['time'] \
+                or 'noimprovement' in terminate \
+                    and count_temperatures_wo_improvement > terminate['noimprovement']['temperatures'] \
+                    and count_accepted / evals < terminate['noimprovement']['accportion']):
+        
         count_temperatures_wo_improvement += 1
-
         for _ in range(repetitions):
 
             # get neighbor
@@ -82,21 +85,11 @@ def sa( instance: str,
                 convergence['evals'].append(evals)
                 convergence['time'].append(time.perf_counter() - starttime)
 
-            # check termination condition
-            if 'evals' in terminate and evals >= terminate['evals'] \
-                or 'qualdev' in terminate and best_quality < optimal_quality * (1 + terminate['qualdev']) \
-                or 'time' in terminate and time.perf_counter() - starttime > terminate['time'] \
-                or 'temperature' in terminate and current_temperature > terminate['temperature'] \
-                or 'noimprovement' in terminate \
-                    and count_temperatures_wo_improvement > terminate['noimprovement']['temperatures'] \
-                    and count_accepted / evals < terminate['noimprovement']['accportion']:
-                
-                if convergence != None:
-                    print_headers: bool = False if fconvergence.exists() else True
-                    pd.DataFrame(convergence).to_csv(fconvergence.absolute(),  index = None, mode = 'a', header = print_headers)
-
-                return {'qualdev': (best_quality - optimal_quality) / optimal_quality, 'evals': evals, 'time': time.perf_counter() - starttime}
-
         # cool down
         current_temperature *= cooling_factor
         current_temperature = max(current_temperature, 0.00001) # avoid rounding errors
+    if convergence != None:
+        print_headers: bool = False if fconvergence.exists() else True
+        pd.DataFrame(convergence).to_csv(fconvergence.absolute(),  index = None, mode = 'a', header = print_headers)
+
+    return {'qualdev': (best_quality - optimal_quality) / optimal_quality, 'evals': evals, 'time': time.perf_counter() - starttime}
