@@ -5,14 +5,13 @@ from pathlib import Path
 import random
 import time
 
-from rpy2 import robjects
 import numpy as np
 import pandas as pd
 import tsplib95
 
 from myproject.metaheuristic.sa import sa
 from myproject.metaheuristic.aco import aco
-import myproject.wrapper.irace_sa as irace_sa
+import myproject.wrapper_irace as wrapper_irace
 
 class Results:
 
@@ -85,44 +84,6 @@ def sa_test_config( fname: str,
 
     results.save(Path('myproject/data/' + fname))
 
-def iraceTune(budget: int, terminate: dict, optimize: str) -> dict:
-
-    robjects.r('library("irace")')
-    robjects.r('parameters = readParameters("myproject/tuning-settings/sa-parameters.txt")')
-    robjects.r('scenario = readScenario(filename = "myproject/tuning-settings/sa-scenario.txt")')
-
-    # set tuning budget
-    robjects.r('scenario$maxExperiments = ' + str(budget))
-    
-    # set optimize parameter
-    robjects.r('parameters$domain$optimize = \"' + optimize + '\"')
-
-    # set termination condition
-    for key in terminate:
-        if key == 'noimprovement':
-            robjects.r('parameters$domain$term_noimprovement = \"True\"')
-            robjects.r('parameters$domain$term_noimpr_temp_val = ' + str(terminate['noimprovement']['temperatures']))
-            robjects.r('parameters$domain$term_noimpr_accp_val = ' + str(terminate['noimprovement']['accportion']))
-        else:
-            boolparam = 'term_' + key
-            valparam = boolparam + '_val'
-            robjects.r('parameters$domain$' + boolparam + ' = \"True\"')
-            robjects.r('parameters$domain$' + valparam + ' = ' + str(terminate[key]))
-
-    robjects.r('checkIraceScenario(scenario = scenario, parameters = parameters)')
-    robjects.r('results = irace(scenario = scenario, parameters = parameters)')
-
-    # get parameter values of best configuration
-    colnames = list(robjects.r('names(results[1,])'))
-    values = np.array(robjects.r('results[1,]')).flatten()
-    elite = {'budget': budget}
-
-    for i in range(len(colnames)):
-        if not colnames[i].startswith('.'):
-            elite[colnames[i]] = values[i]
-
-    return elite
-
 # test sa
 # sa_test_config('cfgdefaultt0', 'myproject/instances/20nodes/test', iterations = 5, budget_tuned = 0, 
 #                 terminate = {'evals': 100})
@@ -132,20 +93,23 @@ def iraceTune(budget: int, terminate: dict, optimize: str) -> dict:
 # aco('myproject/instances/20nodes/rnd0_20.tsp', 1, 5, 0.5, 0.5, 50, 0.8, terminate, Path('acoconvergence'))
 
 # default convergence
-sa_test_config('cfgdefaultt0', 'myproject/instances/20nodes/test', iterations = 5, budget_tuned = 0, 
-            terminate = None, config = None, fconvergence = Path('myproject/data/saconv-cfgdefaultt0'))
+# sa_test_config('cfgdefaultt0', 'myproject/instances/20nodes/test', iterations = 5, budget_tuned = 0, 
+#             terminate = None, config = None, fconvergence = Path('myproject/data/saconv-cfgdefaultt0'))
 
 # tune
-# evals = 100
-# budget = 300
-# optimize = 'qualdev'
-# name = 'e' + str(evals) + 't' + str(budget) + 'o' + str(optimize)
-# elite = iraceTune(budget = budget, terminate = {'evals': evals}, optimize = optimize)
-# os.rename(r'irace.Rdata', r'data/irace.Rdata.' + name)
-# print(elite)
+evals = 500
+budget = 300
+train_instances_dir = 'myproject/instances/20nodes'
+train_instances_file = 'myproject/instances/20nodes/trainInstancesFile'
+optimize = 'qualdev'
+name = 'e' + str(evals) + 't' + str(budget) + 'o' + str(optimize)
+elite = wrapper_irace.tune(budget = budget, algorithm = 'ACO', terminate = {'evals': evals}, optimize = optimize,
+                            train_instances_dir = train_instances_dir, train_instances_file = train_instances_file)
+os.rename(r'irace.Rdata', r'myproject/data/irace.Rdata.' + name)
+print(elite)
 
 # run tuned cfg
-# config, terminate, optimize = irace_sa.dict2params(elite) 
+# config, terminate, optimize = wrapper_irace.dict2params(elite) 
 # sa_test_config(fname = name, 
 #                instancefolder = 'myproject/instances/20nodes/test', iterations = 50, 
 #                budget_tuned = budget, terminate = None, config = config,
@@ -171,5 +135,5 @@ sa_test_config('cfgdefaultt0', 'myproject/instances/20nodes/test', iterations = 
 #         candparams.append(row.index[i])
 #         candparams.append(row.values[i])
 
-#     cfg, terminate, optimize = wrapper_irace_sa.create_config_terminate_optimize(candparams)
+#     cfg, terminate, optimize = wrapper_wrapper_irace.create_config_terminate_optimize(candparams)
 #     print((cfg, terminate, optimize))

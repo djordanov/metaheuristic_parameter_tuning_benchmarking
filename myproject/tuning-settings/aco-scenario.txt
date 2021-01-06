@@ -8,7 +8,7 @@
 
 ## File that contains the description of the parameters of the target
 ## algorithm.
-parameterFile = "./tuning/parameters.txt"
+# parameterFile = "./tuning-settings/parameters.txt"
 
 ## Directory where the programs will be run.
 # execDir = "./"
@@ -43,7 +43,7 @@ trainInstancesFile = "../instances/20nodes/trainInstancesFile"
 
 ## Script called for each configuration that executes the target algorithm
 ## to be tuned. See templates.
-targetRunner = "../wrapper/irace_sa.py"
+targetRunner = "../wrapper/irace_aco.py"
 
 ## Number of times to retry a call to targetRunner if the call failed.
 # targetRunnerRetries = 0

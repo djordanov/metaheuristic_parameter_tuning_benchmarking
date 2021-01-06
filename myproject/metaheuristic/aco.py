@@ -68,12 +68,7 @@ def updatePheromones(pheromone_matrix: list, evaporation: float, Q: float, antSo
     return new_pheromones
 
 def aco(instance: str, 
-        initial_pheromone: float, 
-        antcount: int, 
-        alpha: float,
-        beta: float,
-        Q: float,
-        evaporation: float,
+        cfg: dict,
         terminate: dict, 
         fconvergence: Path = None) -> dict:
     starttime = time.perf_counter()
@@ -86,7 +81,7 @@ def aco(instance: str,
 
     # setup
     distance_matrix = [ [problem.get_weight(a, b) for b in range(problem.dimension)] for a in range(problem.dimension) ]    
-    pheromone_matrix = [ [initial_pheromone] * problem.dimension] * problem.dimension
+    pheromone_matrix = [ [cfg['initial_pheromone']] * problem.dimension] * problem.dimension
     best_quality = None
     evals = 0
 
@@ -95,9 +90,9 @@ def aco(instance: str,
         or 'time' in terminate and time.perf_counter() - starttime > terminate['time']):
     
         # construct ant solutions...
-        antSols = [constructAntSolution(distance_matrix, pheromone_matrix, alpha, beta) for _ in range(antcount)]
+        antSols = [constructAntSolution(distance_matrix, pheromone_matrix, cfg['alpha'], cfg['beta']) for _ in range(cfg['antcount'])]
         antQuals = problem.trace_tours(antSols)
-        evals += antcount
+        evals += cfg['antcount']
 
         # local search...
         # lets skip that for now...
@@ -108,7 +103,7 @@ def aco(instance: str,
             best_quality = best_new_quality
 
         # update pheromones...
-        pheromone_matrix = updatePheromones(pheromone_matrix, evaporation, Q, antSols, antQuals)
+        pheromone_matrix = updatePheromones(pheromone_matrix, cfg['evaporation'], cfg['Q'], antSols, antQuals)
 
         # save state if convergence is looked for 
         if convergence != None:

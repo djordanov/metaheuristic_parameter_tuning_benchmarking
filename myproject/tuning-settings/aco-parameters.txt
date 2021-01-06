@@ -29,16 +29,17 @@
 # termination parameters are set to False by default, selected termination parameters are set to True in the code
 
 # 1:                  2:                            3:       4:                5:
-initial_temperature  "--initial_temperature "       r        (1, 1000) 
-repetitions          "--repetitions "               i        (1, 1000) 
-cooling_factor       "--cooling_factor "            r        (0.1, 1)
+algorithm            "--algorithm "                 c        (ACO) 
+initial_pheromone    "--initial_pheromone "         r        (0, 1000) 
+antcount             "--antcount "                  i        (1, 1000) 
+alpha                "--alpha "                     r        (0.00001, 1)
+beta                 "--beta "                      r        (0.00001, 1)
+Q                    "--Q "                         r        (0.1, 10000)
+evaporation          "--evaporation "               r        (0.0001, 1)
 term_evals           "--term_evals "                c        (False)         
 term_evals_val       "--term_evals_val "            c        (1000)            | term_evals == 'True'
 term_qualdev         "--term_qualdev "              c        (False)         
 term_qualdev_val     "--term_qualdev_val "          c        (0.1)             | term_qualdev == 'True'
 term_time            "--term_time "                 c        (False)         
 term_time_val        "--term_time_val "             c        (500)             | term_time == 'True'
-term_noimprovement   "--term_noimprovement "        c        (False)         
-term_noimpr_temp_val "--term_noimpr_temp_val "      c        (5)               | term_noimprovement == 'True'
-term_noimpr_accp_val "--term_noimpr_accp_val "      c        (0.2)             | term_noimprovement == 'True'
-optimize             "--optimize "                  c        (qualdev) 
+optimize             "--optimize "                  c        (setincode) 

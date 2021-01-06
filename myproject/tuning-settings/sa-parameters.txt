@@ -1,0 +1,45 @@
+## Template for parameter description file for Iterated Race.
+##
+## The format is one parameter per line. Each line contains:
+##
+## 1: Name of the parameter. An unquoted alphanumeric string,
+##    example: ants
+
+## 2: Switch to pass the parameter. A quoted (possibly empty) string, 
+##    if the value and the switch must be separated, add a space at
+##    the end of the string. Example : "--version1 --ants "
+
+## 3: Type. An unquoted single letter, among 
+##     i: Integer, c: categorical, o: ordinal, r: real.
+
+## 4: For c and o: All possible values, that is, a variable number of
+##    quoted or unquoted strings separated by commas within
+##    parenthesis. Empty strings and strings containing commas or
+##    spaces must be quoted.
+##    For i,r: a pair of unquoted numbers representing minimum and
+##    maximum values. 
+
+## 5: A conditional parameter can be defined according to the values of
+##    one or several other parameters.  This is done by adding a
+##    character '|' followed by an R expression involving the names of
+##    other parameters. This expression must return TRUE if the 
+##    condition is satisfied, FALSE otherwise.
+
+
+# termination parameters are set to False by default, selected termination parameters are set to True in the code
+
+# 1:                  2:                            3:       4:                5:
+algorithm            "--algorithm "                 c        (SA) 
+initial_temperature  "--initial_temperature "       r        (1, 1000) 
+repetitions          "--repetitions "               i        (1, 1000) 
+cooling_factor       "--cooling_factor "            r        (0.1, 1)
+term_evals           "--term_evals "                c        (False)         
+term_evals_val       "--term_evals_val "            c        (1000)            | term_evals == 'True'
+term_qualdev         "--term_qualdev "              c        (False)         
+term_qualdev_val     "--term_qualdev_val "          c        (0.1)             | term_qualdev == 'True'
+term_time            "--term_time "                 c        (False)         
+term_time_val        "--term_time_val "             c        (500)             | term_time == 'True'
+term_noimprovement   "--term_noimprovement "        c        (False)         
+term_noimpr_temp_val "--term_noimpr_temp_val "      c        (5)               | term_noimprovement == 'True'
+term_noimpr_accp_val "--term_noimpr_accp_val "      c        (0.2)             | term_noimprovement == 'True'
+optimize             "--optimize "                  c        (setincode) 
