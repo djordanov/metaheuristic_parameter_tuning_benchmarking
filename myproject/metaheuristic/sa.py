@@ -9,15 +9,9 @@ import pandas as pd
 
 import tsplib95
 
+from myproject.metaheuristic.commons import random_n2opt
+
 # logging.basicConfig(level=logging.DEBUG) # logging
-
-def random_n2opt(solution: list) -> list:
-    combinations = [(a, b) for a in range(len(solution)) for b in range(a, len(solution)) if abs(a-b) > 1]
-    permutation = random.choice(combinations)
-    return n2opt(solution, permutation[0], permutation[1])
-
-def n2opt(solution: list, i: int, j: int) -> list:
-     return solution[:i+1] + solution[i+1:j+1][::-1] + solution[j+1:]
 
 def accept(current_quality: float, neighbor_quality: float, current_temperature: float) -> bool:
     if neighbor_quality <= current_quality:

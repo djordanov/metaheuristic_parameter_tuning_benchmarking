@@ -1,9 +1,11 @@
 from pathlib import Path
 import random
 import time
+import numpy as np
 import pandas as pd
 
 import tsplib95
+from myproject.metaheuristic.commons import iterimprov_2opt
 
 def constructAntSolution(distance_matrix: list, pheromone_matrix: list, alpha: float, beta: float) -> list:
 
@@ -82,7 +84,7 @@ def aco(instance: str,
     # setup
     distance_matrix = [ [problem.get_weight(a, b) for b in range(problem.dimension)] for a in range(problem.dimension) ]    
     pheromone_matrix = [ [cfg['initial_pheromone']] * problem.dimension] * problem.dimension
-    best_quality = None
+    best_quality = np.inf
     evals = 0
 
     while not ('evals' in terminate and evals >= terminate['evals'] \
@@ -95,7 +97,8 @@ def aco(instance: str,
         evals += cfg['antcount']
 
         # local search...
-        # lets skip that for now...
+        for i in range(cfg['antcount']):
+            antSols[i], antQuals[i], evals = iterimprov_2opt(problem, antSols[i], antQuals[i], 'first')
 
         # set best (could be done more speed friendly)
         best_new_quality = min(antQuals)
