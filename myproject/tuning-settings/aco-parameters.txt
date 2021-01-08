@@ -36,6 +36,7 @@ alpha                "--alpha "                     r        (0.00001, 1)
 beta                 "--beta "                      r        (0.00001, 1)
 Q                    "--Q "                         r        (0.1, 10000)
 evaporation          "--evaporation "               r        (0.0001, 1)
+localsearch          "--localsearch "               c        (None, first, best) 
 term_evals           "--term_evals "                c        (False)         
 term_evals_val       "--term_evals_val "            c        (1000)            | term_evals == 'True'
 term_qualdev         "--term_qualdev "              c        (False)         
