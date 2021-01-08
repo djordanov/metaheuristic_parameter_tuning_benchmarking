@@ -1,25 +1,25 @@
-NAME : rnd25_20.tsp.tsp.optbc.tour
+NAME : rnd25_20.tsp.tsp.opt.tour
 TYPE : TOUR
 DIMENSION : 20
 TOUR_SECTION
 1
-2
 17
-12
-10
-11
-4
-6
-20
-15
-14
-8
-18
-3
-16
-13
-9
-7
 5
+15
+7
+4
+12
+20
+11
+18
+2
+9
 19
+8
+16
+10
+13
+3
+6
+14
 -1

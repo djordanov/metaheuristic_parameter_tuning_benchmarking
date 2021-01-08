@@ -44,6 +44,7 @@ VALID_PARAMETERS = [
     'alpha',                
     'beta',                 
     'Q',                    
+    'localsearch',
     'evaporation',
     'term_evals',
     'term_evals_val',

@@ -4,20 +4,11 @@ import tsplib95
 
 import numpy as np
 import pandas as pd
-from python_tsp.exact import solve_tsp_dynamic_programming
 
+from concorde.tsp import TSPSolver # wrapper around concorde
 import os
-from rpy2 import robjects
-
-CONCORDE_PATH = Path('myproject/')
 
 def generate_optimal_solutions(instancefolder: str):
-
-    print('--- Computing optimal solutions... ---')
-
-    # solve with concorde
-    robjects.r('library("TSP")')
-    robjects.r('concorde_path(\"' + str(CONCORDE_PATH.absolute()) + '\")')
 
     # iterate over instances
     entries = Path(instancefolder)
@@ -27,14 +18,14 @@ def generate_optimal_solutions(instancefolder: str):
             continue
 
         # solve with concorde
-        robjects.r('problem = read_TSPLIB(\"' + str(entry.absolute()) +  '\")')
-        robjects.r('tour = solve_TSP(problem, method = "concorde")')
-        tour = list(robjects.r('as.integer(tour)'))
+        solver = TSPSolver.from_tspfile(str(entry.absolute()))
+        solution = solver.solve()
+        tour = solution.tour + 1 # nodes start at 1
         
         # save optimal solution
         optpath = Path(instancefolder + '/' + entry.name).with_suffix('.opt.tour')
         fopt = optpath.open('w+')
-        fopt.write('NAME : ' + entry.name + '.tsp.optbc.tour\n')
+        fopt.write('NAME : ' + entry.name + '.tsp.opt.tour\n')
         fopt.write('TYPE : TOUR\n')
         fopt.write('DIMENSION : '+ str(len(tour)) + '\n')
         fopt.write('TOUR_SECTION''\n')
@@ -43,18 +34,18 @@ def generate_optimal_solutions(instancefolder: str):
         fopt.write('-1')
         fopt.close()
 
-def generate_random_euclidean_instances(dir: Path, count: int, cnodes: int, squaresize: int):
+def generate_random_euclidean_instances(dir: str, count: int, cnodes: int, squaresize: int):
     # use tsplib format
 
     # create directory if not exists
-    dir.mkdir(parents = True, exist_ok = True)
+    Path(dir).mkdir(parents = True, exist_ok = True)
 
     # create problems...
     for i in range(count):
 
         # create file and compulsories
         name = "rnd" + str(i) + "_" + str(cnodes) + ".tsp"
-        f = open(str(dir.absolute()) + '/' + name, "w")
+        f = open(dir + name, "w")
         f.write("NAME : " + name + "\n")
         f.write("TYPE : TSP" + "\n")
         f.write("DIMENSION : " + str(cnodes) + "\n")
@@ -67,20 +58,9 @@ def generate_random_euclidean_instances(dir: Path, count: int, cnodes: int, squa
             f.write(line + "\n")
         f.close()
 
-generate_random_euclidean_instances(Path('myproject/instances/50nodes/'), count = 50, cnodes = 50, squaresize = 1000)
-generate_optimal_solutions('myproject/instances/50nodes')
-generate_random_euclidean_instances(Path('myproject/instances/50nodes/test'), count = 50, cnodes = 50, squaresize = 1000)
-generate_optimal_solutions('myproject/instances/50nodes/test')
-os.system('ls myproject/instances/50nodes/ *.tsp | sort > myproject/instances/50nodes/trainInstancesFile')
-
-generate_random_euclidean_instances(Path('myproject/instances/20nodes'), count = 50, cnodes = 20, squaresize = 1000)
-generate_optimal_solutions('myproject/instances/20nodes')
-generate_random_euclidean_instances(Path('myproject/instances/20nodes/test'), count = 50, cnodes = 20, squaresize = 1000)
-generate_optimal_solutions('myproject/instances/20nodes/test')
-os.system('ls myproject/instances/20nodes/ *.tsp | sort > myproject/instances/50nodes/trainInstancesFile')
-
-generate_random_euclidean_instances(Path('myproject/instances/100nodes'), count = 50, cnodes = 100, squaresize = 1000)
-generate_optimal_solutions('myproject/instances/100nodes')
-generate_random_euclidean_instances(Path('myproject/instances/100nodes/test'), count = 50, cnodes = 100, squaresize = 1000)
-generate_optimal_solutions('myproject/instances/100nodes/test')
-os.system('ls myproject/instances/100nodes/ *.tsp | sort > myproject/instances/50nodes/trainInstancesFile')
+dir = 'myproject/instances/20nodes/'
+generate_random_euclidean_instances(dir, count = 50, cnodes = 20, squaresize = 1000)
+generate_optimal_solutions(dir)
+generate_random_euclidean_instances(dir + 'test/', count = 50, cnodes = 20, squaresize = 1000)
+generate_optimal_solutions(dir + 'test/')
+os.system('ls ' + dir + '*.tsp | sort > ' + dir + 'trainInstancesFile')
