@@ -13,37 +13,13 @@ from myproject.metaheuristic.sa import sa
 from myproject.metaheuristic.aco import aco
 import myproject.wrapper_irace as wrapper_irace
 
-DEF_CFG_ACO = {'initial_pheromone': 5, 'antcount': 5, 'alpha': 0.5, 'beta': 0.5, 'Q': 1000, 'evaporation': 0.5, 'localsearch': 'first'}
+from collections import namedtuple
 
+DEF_CFG_ACO = {'initial_pheromone': 5, 'antcount': 5, 'alpha': 0.5, 'beta': 0.5, 'Q': 1000, 'evaporation': 0.5, 'localsearch': 'first'}
 DEF_TERM_SA = {'noimprovement': {'temperatures': 5, 'accportion': 0.02}}
 DEF_TERM_ACO = {'evals': 5000}
 
-class Results:
-
-    # actual run results
-    tuning_budget: list = []
-    instances: list = []
-    qualities: list = []
-    evals: list = []
-    times: list = []
-
-    def add(self, tuning_budget, instance, quality, evals, time):
-        self.tuning_budget.append(tuning_budget)
-        self.instances.append(instance)
-        self.qualities.append(quality)
-        self.evals.append(evals)
-        self.times.append(time)
-
-    def save(self, fpath: Path):
-        df: pd.DataFrame = pd.DataFrame({
-                'tuning_budget': self.tuning_budget,
-                'instances': self.instances, 
-                'qualdev': self.qualities, 
-                'evals': self.evals, 
-                'times': self.times
-        })
-        mode = 'a' if fpath.exists() else 'w+'
-        df.to_csv(fpath.absolute(), mode = mode, index = False)
+Result = namedtuple('Result', 'tuning_budget instance quality evals time')
 
 def def_cfg_sa(problem: tsplib95.models.StandardProblem) -> dict:
     distances = [problem.get_weight(edge[0], edge[1]) for edge in problem.get_edges()]
@@ -84,7 +60,8 @@ def mhruns( fname: str,
                 config: dict = None, 
                 fconvergence = None):
     # run metaheuristic on all problems in folder...
-    results = Results()
+    # results = Results()
+    results = []
     entries = Path(instancefolder)
 
     for _ in range(iterations):
@@ -94,15 +71,18 @@ def mhruns( fname: str,
                     continue
             
             result = mhrun(entry, algorithm = algorithm, terminate = terminate, config = config, fconvergence = fconvergence)
-            results.add(budget_tuned, entry.name, result['qualdev'], result['evals'], result['time'])
+            results.append(Result(budget_tuned, entry.name, result['qualdev'], result['evals'], result['time']))
 
-    results.save(Path('myproject/data/' + fname))
+    fpath = Path('myproject/data/' + fname)
+    df: pd.DataFrame = pd.DataFrame(results)
+    mode = 'a' if fpath.exists() else 'w+'
+    df.to_csv(fpath.absolute(), mode = mode, index = False)
 
 # test metaheuristics
 random.seed(1)
-result = mhrun(Path('myproject/instances/20nodes/rnd0_20.tsp'), algorithm = 'SA')
+result = mhrun(Path('myproject/instances/20nodes/rnd0_20.tsp'), algorithm = 'SA', terminate = {'evals': 100})
 print(result)
-mhruns('cfgdefaultt0', instancefolder = 'myproject/instances/20nodes/test', algorithm = 'SA', iterations = 1, budget_tuned = 0)
+mhruns('test', instancefolder = 'myproject/instances/20nodes/test', algorithm = 'SA', iterations = 1, budget_tuned = 0, terminate = {'evals': 100})
 
 # default convergence
 # sa_test_config('cfgdefaultt0', 'myproject/instances/20nodes/test', iterations = 5, budget_tuned = 0, 
