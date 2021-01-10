@@ -17,11 +17,14 @@ def random_n2opt(tour: list, possible_moves: list) -> list:
     move = random.choice(possible_moves)
     return n2opt(tour, tour.index(move[0]), tour.index(move[1]))
 
-def iterimprov_first_2opt(problem: tsplib95.models.StandardProblem, 
+# improves a given tour via 2-opt iterative improvement local search, returns (local optimum, quality, evals required) tuple
+def iterimprov_2opt(problem: tsplib95.models.StandardProblem, 
                         inittour: list, 
                         initqual: float, 
                         minqual: float,
-                        maxevals: int) -> tuple:
+                        maxevals: int,
+                        mode: str) -> tuple:
+
     # setup
     curtour = inittour
     curqual = initqual
@@ -29,51 +32,35 @@ def iterimprov_first_2opt(problem: tsplib95.models.StandardProblem,
     posmoves = [(a, b) for a in range(len(inittour)) for b in range(a, len(inittour)) if abs(a-b) > 1 and not (a == 0 and b == len(inittour) - 1)]
 
     while evals < maxevals and minqual < curqual:
-        neighbor = random_n2opt(curtour, posmoves)
-        neighqual = problem.trace_tours([neighbor])[0]
-        evals += 1
-        if neighqual < curqual:
-            curtour = neighbor
-            curqual = neighqual
-    
-    return curtour, curqual, evals
+        if mode == 'best':
+            neighbors = [n2opt(curtour, move[0], move[1]) for move in posmoves]
+            neighquals = problem.trace_tours(neighbors)
+            evals += len(neighbors)            
+            min_neighqual = min(neighquals)
 
-def iterimprov_best_2opt(problem: tsplib95.models.StandardProblem, 
-                        inittour: list, 
-                        initqual: float, 
-                        minqual: float,
-                        maxevals: int) -> tuple:
-    
-    # setup
-    curtour = inittour
-    curqual = initqual
-    evals = 0
+            if min_neighqual < curqual:
+                curqual = min_neighqual
+                curtour = neighbors[neighquals.index(curqual)]
+            else:
+                return curtour, curqual, evals
 
-    while evals < maxevals and minqual < curqual:
-        posmoves = [(a, b) for a in range(len(inittour)) for b in range(a, len(inittour)) if abs(a-b) > 1 and not (a == 0 and b == len(inittour) - 1)]
-        neighbors = [n2opt(curtour, move[0], move[1]) for move in posmoves]
-        neighquals = problem.trace_tours(neighbors)
-        evals += len(neighbors)            
-        min_neighqual = min(neighquals)
+        elif mode == 'first':
+            rnd_posmoves = posmoves.copy()
+            random.shuffle(rnd_posmoves)
 
-        if min_neighqual < curqual:
-            curqual = min_neighqual
-            curtour = neighbors[neighquals.index(curqual)]
+            found = False
+            for move in rnd_posmoves:
+                neighbor = n2opt(curtour, move[0], move[1])
+                neighqual = problem.trace_tours([neighbor])[0]
+                evals += 1
+                if neighqual < curqual:
+                    curtour = neighbor
+                    curqual = neighqual
+                    found = True
+                    break
+            if not found:
+                return curtour, curqual, evals
         else:
-            return curtour, curqual, evals
+            print('No iterative improvement procedure for: \"' + mode + '\"')
+
     return curtour, curqual, evals
-
-# improves a given tour via 2-opt iterative improvement local search, returns (local optimum, quality, evals required) tuple
-def iterimprov_2opt(problem: tsplib95.models.StandardProblem, 
-                        tour: list, 
-                        quality: float, 
-                        minqual: float,
-                        maxevals: int,
-                        mode: str) -> tuple:
-
-    if mode == 'first':
-        return iterimprov_first_2opt(problem, tour, quality, minqual, maxevals)
-    elif mode == 'best':
-        return iterimprov_best_2opt(problem, tour, quality, minqual, maxevals)
-    else:
-        print('No iterative improvement procedure for: \"' + mode + '\"')
