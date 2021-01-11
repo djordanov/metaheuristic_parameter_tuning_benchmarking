@@ -9,7 +9,7 @@ import pandas as pd
 
 import tsplib95
 
-from myproject.metaheuristic.commons import random_n2opt
+from myproject.metaheuristic.commons import Convdata, random_n2opt
 
 # logging.basicConfig(level=logging.DEBUG) # logging
 
@@ -23,33 +23,33 @@ def accept(current_quality: float, neighbor_quality: float, current_temperature:
 
     return False
 
-def sa( instance: str, 
+def sa( instance: Path, 
         cfg: dict, 
         terminate: dict,
-        fconvergence: Path = None) -> dict:
+        fname_convdata: Path = None) -> dict:
     starttime = time.perf_counter()
 
-    convergence = {'qualdev': [], 'evals': [], 'time': []} if fconvergence != None else None
+    convdata = [] if fname_convdata != None else None
 
     # problem: tsplib95.models.StandardProblem
-    problem: tsplib95.models.StandardProblem = tsplib95.load(instance)
-    optimaltour: tsplib95.models.StandardProblem = tsplib95.load(Path(instance).with_suffix('.opt.tour').absolute())
+    problem: tsplib95.models.StandardProblem = tsplib95.load(instance.absolute())
+    optimaltour: tsplib95.models.StandardProblem = tsplib95.load(instance.with_suffix('.opt.tour').absolute())
     optimal_quality: int = problem.trace_tours(optimaltour.tours)[0]
 
     # setup
-    current_solution = list(problem.get_nodes())
-    random.shuffle(current_solution)
-    current_quality = problem.trace_tours([current_solution])[0]
+    curtour = list(problem.get_nodes())
+    random.shuffle(curtour)
+    curqual = problem.trace_tours([curtour])[0]
     evals = 1
-    posmoves = [(a, b) for a in range(len(current_solution)) for b in range(a, len(current_solution)) if abs(a-b) > 1 and not (a == 0 and b == len(current_solution) - 1)]
+    posmoves = [(a, b) for a in range(len(curtour)) for b in range(a, len(curtour)) if abs(a-b) > 1 and not (a == 0 and b == len(curtour) - 1)]
 
-    current_temperature = cfg['initial_temperature']
-    best_quality = current_quality
+    temperature = cfg['initial_temperature']
+    bestqual = curqual
     count_accepted = 0
     count_temperatures_wo_improvement = 0
 
     while not ('evals' in terminate and evals >= terminate['evals'] \
-                or 'qualdev' in terminate and best_quality < optimal_quality * (1 + terminate['qualdev']) \
+                or 'qualdev' in terminate and bestqual < optimal_quality * (1 + terminate['qualdev']) \
                 or 'time' in terminate and time.perf_counter() - starttime > terminate['time'] \
                 or 'noimprovement' in terminate \
                     and count_temperatures_wo_improvement > terminate['noimprovement']['temperatures'] \
@@ -59,30 +59,29 @@ def sa( instance: str,
         for _ in range(cfg['repetitions']):
 
             # get neighbor
-            neighbor_solution = random_n2opt(current_solution, posmoves)
-            neighbor_quality = problem.trace_tours([neighbor_solution])[0]
+            neighsol = random_n2opt(curtour, posmoves)
+            neighqual = problem.trace_tours([neighsol])[0]
             evals += 1
 
             # accept neighbor if 
-            if accept(current_quality, neighbor_quality, current_temperature):
-                current_solution = neighbor_solution
-                current_quality = neighbor_quality
+            if accept(curqual, neighqual, temperature):
+                curtour = neighsol
+                curqual = neighqual
                 count_accepted += 1
 
-                if current_quality < best_quality:
-                    best_quality = current_quality
+                if curqual < bestqual:
+                    bestqual = curqual
                     count_temperatures_wo_improvement = 0    
             
-            if convergence != None:
-                convergence['qualdev'].append((best_quality - optimal_quality) / optimal_quality)
-                convergence['evals'].append(evals)
-                convergence['time'].append(time.perf_counter() - starttime)
+            if convdata != None:
+                qualdev = (bestqual - optimal_quality) / optimal_quality
+                convdata.append(Convdata(instance.name, qualdev, evals, time.perf_counter() - starttime))
 
         # cool down
-        current_temperature *= cfg['cooling_factor']
-        current_temperature = max(current_temperature, 0.00001) # avoid rounding errors
-    if convergence != None:
-        print_headers: bool = False if fconvergence.exists() else True
-        pd.DataFrame(convergence).to_csv(fconvergence.absolute(),  index = None, mode = 'a', header = print_headers)
+        temperature *= cfg['cooling_factor']
+        temperature = max(temperature, 0.00001) # avoid rounding errors
+    if convdata != None:
+        print_headers: bool = False if fname_convdata.exists() else True
+        pd.DataFrame(convdata).to_csv(fname_convdata.absolute(),  index = None, mode = 'a', header = print_headers)
 
-    return {'qualdev': (best_quality - optimal_quality) / optimal_quality, 'evals': evals, 'time': time.perf_counter() - starttime}
+    return {'qualdev': (bestqual - optimal_quality) / optimal_quality, 'evals': evals, 'time': time.perf_counter() - starttime}

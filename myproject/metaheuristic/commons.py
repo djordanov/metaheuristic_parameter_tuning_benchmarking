@@ -1,6 +1,10 @@
 import tsplib95
 import random
 
+from collections import namedtuple
+
+Convdata = namedtuple('Convdata', 'instance qualdev evals time')
+
 def n2opt(tour: list, idx1: int, idx3: int) -> list:
 
     # decide which segment to reverse

@@ -201,9 +201,9 @@ if __name__=='__main__':
     # Run runner
     result = None
     if algorithm == 'SA':
-        result = sa(instance = instance, cfg = cfg, terminate = terminate, fconvergence = None)
+        result = sa(instance = instance, cfg = cfg, terminate = terminate, fname_convdata = None)
     elif algorithm == 'ACO':
-        result = aco(instance = instance, cfg = cfg, terminate = terminate, fconvergence = None)
+        result = aco(instance = instance, cfg = cfg, terminate = terminate, fname_convdata = None)
 
     print(result[optimize])
     

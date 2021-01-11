@@ -32,7 +32,7 @@ def mhrun(instance: Path,
             algorithm: str,
             terminate: dict = None, 
             config: dict = None, 
-            fconvergence = None):
+            fname_convdata = None):
 
     problem = tsplib95.load(instance)
 
@@ -40,13 +40,13 @@ def mhrun(instance: Path,
         # use default configuration and termination values if none are given
         cfg = def_cfg_sa(problem) if config == None else config
         terminate = DEF_TERM_SA if terminate == None else terminate
-        return sa(instance = instance.absolute(), cfg = cfg, terminate = terminate, fconvergence = fconvergence)
+        return sa(instance = instance, cfg = cfg, terminate = terminate, fname_convdata = fname_convdata)
 
     if algorithm == 'ACO':
         # use default configuration and termination values if none are given
         cfg = DEF_CFG_ACO if config == None else config
         terminate = DEF_TERM_ACO if terminate == None else terminate
-        return aco(instance = instance.absolute(), cfg = cfg, terminate = terminate, fconvergence = fconvergence)
+        return aco(instance = instance, cfg = cfg, terminate = terminate, fname_convdata = fname_convdata)
 
     else: 
         print('Error: Algorithm ' + '"' + algorithm + '" not found!')
@@ -70,7 +70,7 @@ def mhruns( fname: str,
             if entry.suffix != '.tsp':
                     continue
             
-            result = mhrun(entry, algorithm = algorithm, terminate = terminate, config = config, fconvergence = fconvergence)
+            result = mhrun(entry, algorithm = algorithm, terminate = terminate, config = config, fname_convdata = fconvergence)
             results.append(Result(budget_tuned, entry.name, result['qualdev'], result['evals'], result['time']))
 
     fpath = Path('myproject/data/' + fname)
@@ -80,7 +80,7 @@ def mhruns( fname: str,
 
 # test metaheuristics
 random.seed(1)
-result = mhrun(Path('myproject/instances/20nodes/rnd0_20.tsp'), algorithm = 'SA')
+result = mhrun(Path('myproject/instances/20nodes/rnd0_20.tsp'), algorithm = 'ACO', fname_convdata = Path('test'))
 print(result)
 # mhruns('test', instancefolder = 'myproject/instances/20nodes/test', algorithm = 'SA', iterations = 1, budget_tuned = 0, terminate = {'evals': 100})
 

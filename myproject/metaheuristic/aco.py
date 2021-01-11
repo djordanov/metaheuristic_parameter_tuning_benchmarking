@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 import tsplib95
-from myproject.metaheuristic.commons import iterimprov_2opt
+from myproject.metaheuristic.commons import iterimprov_2opt, Convdata
 
 def constructAntSolution(problem: tsplib95.models.StandardProblem,
             distance_matrix: list, pheromone_matrix: list, alpha: float, beta: float) -> list:
@@ -68,20 +68,20 @@ def updatePheromones(pheromone_matrix: list, evaporation: float, Q: float, antSo
 
     return new_pheromones
 
-def aco(instance: str, 
+def aco(instance: Path, 
         cfg: dict,
         terminate: dict, 
-        fconvergence: Path = None) -> dict:
+        fname_convdata: Path = None) -> dict:
     starttime = time.perf_counter()
-    convergence = {'qualdev': [], 'evals': [], 'time': []} if fconvergence != None else None
+    convdata = [] if fname_convdata != None else None
 
     # problem: tsplib95.models.StandardProblem
-    problem: tsplib95.models.StandardProblem = tsplib95.load(instance)
-    optimaltour: tsplib95.models.StandardProblem = tsplib95.load(Path(instance).with_suffix('.opt.tour').absolute())
+    problem: tsplib95.models.StandardProblem = tsplib95.load(instance.absolute())
+    optimaltour: tsplib95.models.StandardProblem = tsplib95.load(instance.with_suffix('.opt.tour').absolute())
     optimal_quality: int = problem.trace_tours(optimaltour.tours)[0]
 
     # setup...
-    best_quality = np.inf
+    bestqual = np.inf
     evals = 0
 
     # distance matrix
@@ -96,7 +96,7 @@ def aco(instance: str,
         pheromone_matrix[i][0] = -np.inf
 
     while not ('evals' in terminate and evals >= terminate['evals'] \
-        or 'qualdev' in terminate and best_quality < optimal_quality * (1 + terminate['qualdev']) \
+        or 'qualdev' in terminate and bestqual < optimal_quality * (1 + terminate['qualdev']) \
         or 'time' in terminate and time.perf_counter() - starttime > terminate['time']):
     
         # construct ant solutions...
@@ -110,27 +110,27 @@ def aco(instance: str,
             for i in range(cfg['antcount']):
                 maxevals = np.inf if 'evals' not in terminate else terminate['evals'] - evals
                 minqual = -np.inf if 'qualdev' not in terminate else optimal_quality * (1 + terminate['qualdev'])
-                antSols[i], antQuals[i], newevals = iterimprov_2opt(problem, antSols[i], \
-                                                                    antQuals[i], cfg['localsearch'], \
-                                                                    minqual = minqual, maxevals = maxevals)
+                antSols[i], antQuals[i], newevals = iterimprov_2opt(problem, antSols[i], antQuals[i], 
+                                                                    minqual = minqual, maxevals = maxevals,
+                                                                    mode = cfg['localsearch'])
                 evals += newevals
 
         # update best reached quality (could be done a little bit more speed friendly)
-        best_new_quality = min(antQuals)
-        if best_quality == None or best_new_quality < best_quality:
-            best_quality = best_new_quality
+        it_bestqual = min(antQuals)
+        if bestqual == None or it_bestqual < bestqual:
+            bestqual = it_bestqual
 
         # update pheromones...
         pheromone_matrix = updatePheromones(pheromone_matrix, cfg['evaporation'], cfg['Q'], antSols, antQuals)
 
         # save state if convergence is looked for 
-        if convergence != None:
-            convergence['qualdev'].append((best_quality - optimal_quality) / optimal_quality)
-            convergence['evals'].append(evals)
-            convergence['time'].append(time.perf_counter() - starttime)
-        
-    if convergence != None:
-        print_headers: bool = False if fconvergence.exists() else True
-        pd.DataFrame(convergence).to_csv(fconvergence.absolute(),  index = None, mode = 'a', header = print_headers)
+        if convdata != None:
+            qualdev = (bestqual - optimal_quality) / optimal_quality
+            convdata.append(Convdata(instance.name, qualdev, evals, time.perf_counter() - starttime))
 
-    return {'qualdev': (best_quality - optimal_quality) / optimal_quality, 'evals': evals, 'time': time.perf_counter() - starttime}
+        
+    if convdata != None:
+        print_headers: bool = False if fname_convdata.exists() else True
+        pd.DataFrame(convdata).to_csv(fname_convdata.absolute(),  index = None, mode = 'a', header = print_headers)
+
+    return {'qualdev': (bestqual - optimal_quality) / optimal_quality, 'evals': evals, 'time': time.perf_counter() - starttime}
