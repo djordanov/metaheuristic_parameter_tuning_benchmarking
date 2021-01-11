@@ -80,9 +80,9 @@ def mhruns( fname: str,
 
 # test metaheuristics
 random.seed(1)
-result = mhrun(Path('myproject/instances/20nodes/rnd0_20.tsp'), algorithm = 'SA', terminate = {'evals': 100})
+result = mhrun(Path('myproject/instances/20nodes/rnd0_20.tsp'), algorithm = 'SA')
 print(result)
-mhruns('test', instancefolder = 'myproject/instances/20nodes/test', algorithm = 'SA', iterations = 1, budget_tuned = 0, terminate = {'evals': 100})
+# mhruns('test', instancefolder = 'myproject/instances/20nodes/test', algorithm = 'SA', iterations = 1, budget_tuned = 0, terminate = {'evals': 100})
 
 # default convergence
 # sa_test_config('cfgdefaultt0', 'myproject/instances/20nodes/test', iterations = 5, budget_tuned = 0, 

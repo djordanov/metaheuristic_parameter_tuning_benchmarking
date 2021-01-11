@@ -13,9 +13,9 @@ def n2opt(tour: list, idx1: int, idx3: int) -> list:
             return [tour[0]] + tour[idx1+1:idx3+1] + tour[1:idx1+1] 
         return tour[idx3+1:] + tour[idx1+1:idx3+1] + tour[:idx1+1] # general case
 
-def random_n2opt(tour: list, possible_moves: list) -> list:    
-    move = random.choice(possible_moves)
-    return n2opt(tour, tour.index(move[0]), tour.index(move[1]))
+def random_n2opt(tour: list, posmoves_idxs: list) -> list:    
+    move = random.choice(posmoves_idxs)
+    return n2opt(tour, move[0], move[1])
 
 # improves a given tour via 2-opt iterative improvement local search, returns (local optimum, quality, evals required) tuple
 def iterimprov_2opt(problem: tsplib95.models.StandardProblem, 

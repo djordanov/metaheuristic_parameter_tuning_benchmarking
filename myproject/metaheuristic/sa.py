@@ -37,10 +37,11 @@ def sa( instance: str,
     optimal_quality: int = problem.trace_tours(optimaltour.tours)[0]
 
     # setup
-    current_solution = list(range(problem.dimension))
+    current_solution = list(problem.get_nodes())
     random.shuffle(current_solution)
     current_quality = problem.trace_tours([current_solution])[0]
     evals = 1
+    posmoves = [(a, b) for a in range(len(current_solution)) for b in range(a, len(current_solution)) if abs(a-b) > 1 and not (a == 0 and b == len(current_solution) - 1)]
 
     current_temperature = cfg['initial_temperature']
     best_quality = current_quality
@@ -58,7 +59,7 @@ def sa( instance: str,
         for _ in range(cfg['repetitions']):
 
             # get neighbor
-            neighbor_solution = random_n2opt(current_solution)
+            neighbor_solution = random_n2opt(current_solution, posmoves)
             neighbor_quality = problem.trace_tours([neighbor_solution])[0]
             evals += 1
 
