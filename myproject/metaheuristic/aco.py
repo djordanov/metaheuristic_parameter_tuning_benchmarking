@@ -1,14 +1,16 @@
 from pathlib import Path
 import random
 import time
+from operator import attrgetter
+
 import numpy as np
 import pandas as pd
 
 import tsplib95
-from myproject.metaheuristic.commons import iterimprov_2opt, Convdata
+from myproject.metaheuristic.commons import Solution, Convdata, iterimprov_2opt
 
 def constructAntSolution(problem: tsplib95.models.StandardProblem,
-            distance_matrix: list, pheromone_matrix: list, alpha: float, beta: float) -> list:
+            distance_matrix: list, pheromone_matrix: list, alpha: float, beta: float) -> Solution:
 
     # start tour
     tour = [random.randint(1, problem.dimension)]
@@ -43,28 +45,25 @@ def constructAntSolution(problem: tsplib95.models.StandardProblem,
                 tour.append(node)              
                 break
 
-    return tour
+    return Solution(tour, problem.trace_tours([tour])[0])
 
-def updatePheromones(pheromone_matrix: list, evaporation: float, Q: float, antSols: list, antQuals: list) -> list:
+def updatePheromones(pheromone_matrix: list, evaporation: float, Q: float, ants: list) -> list:
 
     # pheromone evaporation
     new_pheromones = [[cell * evaporation for cell in row] for row in pheromone_matrix]
 
     # pheromone adding
-    for i in range(len(antSols)):
-        solution = antSols[i]
-        quality = antQuals[i]
-
+    for ant in ants:
         # add pheromones for last/ first edge
-        firstNode = solution[0]
-        lastNode = solution[-1]
-        new_pheromones[firstNode][lastNode] = new_pheromones[firstNode][lastNode] + (Q / quality)
+        firstNode = ant.tour[0]
+        lastNode = ant.tour[-1]
+        new_pheromones[firstNode][lastNode] = new_pheromones[firstNode][lastNode] + (Q / ant.qual)
 
         # add pheromones for all the other edges
-        for a in range(len(solution) - 1):
-            nodeFrom = solution[a]
-            nodeTo = solution[a+1]
-            new_pheromones[nodeFrom][nodeTo] = new_pheromones[nodeFrom][nodeTo] + (Q / quality)
+        for a in range(len(ant.tour) - 1):
+            nodeFrom = ant.tour[a]
+            nodeTo = ant.tour[a+1]
+            new_pheromones[nodeFrom][nodeTo] = new_pheromones[nodeFrom][nodeTo] + (Q / ant.qual)
 
     return new_pheromones
 
@@ -81,7 +80,7 @@ def aco(instance: Path,
     optimal_quality: int = problem.trace_tours(optimaltour.tours)[0]
 
     # setup...
-    bestqual = np.inf
+    best = Solution(problem.get_nodes(), problem.trace_canonical_tour()) # default
     evals = 0
 
     # distance matrix
@@ -96,36 +95,33 @@ def aco(instance: Path,
         pheromone_matrix[i][0] = -np.inf
 
     while not ('evals' in terminate and evals >= terminate['evals'] \
-        or 'qualdev' in terminate and bestqual < optimal_quality * (1 + terminate['qualdev']) \
+        or 'qualdev' in terminate and best.qual < optimal_quality * (1 + terminate['qualdev']) \
         or 'time' in terminate and time.perf_counter() - starttime > terminate['time']):
     
-        # construct ant solutions...
-        antSols = [constructAntSolution(problem, distance_matrix, pheromone_matrix, \
+        # construct ant solutions
+        ants = [constructAntSolution(problem, distance_matrix, pheromone_matrix, \
                     cfg['alpha'], cfg['beta']) for _ in range(cfg['antcount'])]
-        antQuals = problem.trace_tours(antSols)
         evals += cfg['antcount']
 
         # local search...
         if cfg['localsearch'] != None:
+            maxevals = np.inf if 'evals' not in terminate else terminate['evals'] - evals
+            minqual = -np.inf if 'qualdev' not in terminate else optimal_quality * (1 + terminate['qualdev'])
             for i in range(cfg['antcount']):
-                maxevals = np.inf if 'evals' not in terminate else terminate['evals'] - evals
-                minqual = -np.inf if 'qualdev' not in terminate else optimal_quality * (1 + terminate['qualdev'])
-                antSols[i], antQuals[i], newevals = iterimprov_2opt(problem, antSols[i], antQuals[i], 
-                                                                    minqual = minqual, maxevals = maxevals,
-                                                                    mode = cfg['localsearch'])
+                ants[i], newevals = iterimprov_2opt(problem, ants[i], minqual = minqual, maxevals = maxevals, mode = cfg['localsearch'])
                 evals += newevals
 
         # update best reached quality (could be done a little bit more speed friendly)
-        it_bestqual = min(antQuals)
-        if bestqual == None or it_bestqual < bestqual:
-            bestqual = it_bestqual
+        itbest = min(ants, key = attrgetter('qual'))
+        if best == None or itbest.qual < best.qual:
+            best = itbest
 
         # update pheromones...
-        pheromone_matrix = updatePheromones(pheromone_matrix, cfg['evaporation'], cfg['Q'], antSols, antQuals)
+        pheromone_matrix = updatePheromones(pheromone_matrix, cfg['evaporation'], cfg['Q'], ants)
 
         # save state if convergence is looked for 
         if convdata != None:
-            qualdev = (bestqual - optimal_quality) / optimal_quality
+            qualdev = (best.qual - optimal_quality) / optimal_quality
             convdata.append(Convdata(instance.name, qualdev, evals, time.perf_counter() - starttime))
 
         
@@ -133,4 +129,4 @@ def aco(instance: Path,
         print_headers: bool = False if fname_convdata.exists() else True
         pd.DataFrame(convdata).to_csv(fname_convdata.absolute(),  index = None, mode = 'a', header = print_headers)
 
-    return {'qualdev': (bestqual - optimal_quality) / optimal_quality, 'evals': evals, 'time': time.perf_counter() - starttime}
+    return {'qualdev': (best.qual - optimal_quality) / optimal_quality, 'evals': evals, 'time': time.perf_counter() - starttime}

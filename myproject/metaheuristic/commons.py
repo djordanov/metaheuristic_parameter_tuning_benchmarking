@@ -1,9 +1,11 @@
 import tsplib95
 import random
 
+from operator import attrgetter
 from collections import namedtuple
 
 Convdata = namedtuple('Convdata', 'instance qualdev evals time')
+Solution = namedtuple('Solution', 'tour qual')
 
 def n2opt(tour: list, idx1: int, idx3: int) -> list:
 
@@ -23,30 +25,30 @@ def random_n2opt(tour: list, posmoves_idxs: list) -> list:
 
 # improves a given tour via 2-opt iterative improvement local search, returns (local optimum, quality, evals required) tuple
 def iterimprov_2opt(problem: tsplib95.models.StandardProblem, 
-                        inittour: list, 
-                        initqual: float, 
+                        initsol: Solution,
                         minqual: float,
                         maxevals: int,
                         mode: str) -> tuple:
 
     # setup
-    curtour = inittour
-    curqual = initqual
+    cursol = Solution(initsol.tour, initsol.qual)
+    dim = len(cursol.tour)
     evals = 0
-    posmoves = [(a, b) for a in range(len(inittour)) for b in range(a, len(inittour)) if abs(a-b) > 1 and not (a == 0 and b == len(inittour) - 1)]
+    posmoves = [(a, b) for a in range(dim) for b in range(a, dim) if abs(a-b) > 1 and not (a == 0 and b == dim - 1)]
 
-    while evals < maxevals and minqual < curqual:
+    while evals < maxevals and minqual < cursol.qual:
         if mode == 'best':
-            neighbors = [n2opt(curtour, move[0], move[1]) for move in posmoves]
-            neighquals = problem.trace_tours(neighbors)
-            evals += len(neighbors)            
-            min_neighqual = min(neighquals)
+            neighsols = []
+            for move in posmoves:
+                neightour = n2opt(cursol.tour, move[0], move[1])
+                neighsols.append(Solution(neightour, problem.trace_tours([neightour])[0]))    
+            evals += len(neighsols)
+            bestneigh = min(neighsols, key = attrgetter('qual'))
 
-            if min_neighqual < curqual:
-                curqual = min_neighqual
-                curtour = neighbors[neighquals.index(curqual)]
+            if bestneigh.qual < cursol.qual:
+                cursol = bestneigh
             else:
-                return curtour, curqual, evals
+                return cursol, evals
 
         elif mode == 'first':
             rnd_posmoves = posmoves.copy()
@@ -54,17 +56,16 @@ def iterimprov_2opt(problem: tsplib95.models.StandardProblem,
 
             found = False
             for move in rnd_posmoves:
-                neighbor = n2opt(curtour, move[0], move[1])
+                neighbor = n2opt(cursol.tour, move[0], move[1])
                 neighqual = problem.trace_tours([neighbor])[0]
                 evals += 1
-                if neighqual < curqual:
-                    curtour = neighbor
-                    curqual = neighqual
+                if neighqual < cursol.qual:
+                    cursol = Solution(neighbor, neighqual)
                     found = True
                     break
             if not found:
-                return curtour, curqual, evals
+                return cursol, evals
         else:
             print('No iterative improvement procedure for: \"' + mode + '\"')
 
-    return curtour, curqual, evals
+    return cursol, evals
