@@ -28,7 +28,7 @@ def constructAntSolution(problem: tsplib95.models.StandardProblem,
         unnormed_probabilities = [0] # nodes start at 1, so node 0 has a probability of ß
         for node in problem.get_nodes():
             if node in possible_moves:
-                probability = (1/edges_distances[node])**alpha * edges_pheromones[node]**beta
+                probability = max((1/edges_distances[node])**alpha * edges_pheromones[node]**beta, 0.00001)
                 unnormed_probabilities.append(probability)
             else:
                 unnormed_probabilities.append(0)
@@ -82,6 +82,7 @@ def aco(instance: Path,
     # setup...
     best = Solution(problem.get_nodes(), problem.trace_canonical_tour()) # default
     evals = 0
+    ants = [] # initialize here because its needed in termination condition
 
     # distance matrix
     distance_matrix = [[np.inf] * (problem.dimension + 1) for _ in range(problem.dimension + 1)]
@@ -96,7 +97,8 @@ def aco(instance: Path,
 
     while not ('evals' in terminate and evals >= terminate['evals'] \
         or 'qualdev' in terminate and best.qual < optimal_quality * (1 + terminate['qualdev']) \
-        or 'time' in terminate and time.perf_counter() - starttime > terminate['time']):
+        or 'time' in terminate and time.perf_counter() - starttime > terminate['time'] \
+        or 'noimprovement' in terminate and len(set([ant.qual for ant in ants])) == 1): # comparing qualities is easier than comparing tours, so...
     
         # construct ant solutions
         ants = [constructAntSolution(problem, distance_matrix, pheromone_matrix, \
@@ -104,7 +106,7 @@ def aco(instance: Path,
         evals += cfg['antcount']
 
         # local search...
-        if cfg['localsearch'] != None:
+        if cfg['localsearch']:
             maxevals = np.inf if 'evals' not in terminate else terminate['evals'] - evals
             minqual = -np.inf if 'qualdev' not in terminate else optimal_quality * (1 + terminate['qualdev'])
             for i in range(cfg['antcount']):

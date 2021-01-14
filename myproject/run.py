@@ -15,9 +15,9 @@ import myproject.wrapper_irace as wrapper_irace
 
 from collections import namedtuple
 
-DEF_CFG_ACO = {'initial_pheromone': 5, 'antcount': 5, 'alpha': 0.5, 'beta': 0.5, 'Q': 1000, 'evaporation': 0.5, 'localsearch': 'first'}
+DEF_CFG_ACO = {'initial_pheromone': 5000, 'antcount': 20, 'alpha': 1, 'beta': 5, 'Q': 5000, 'evaporation': 0.5, 'localsearch': None}
 DEF_TERM_SA = {'noimprovement': {'temperatures': 5, 'accportion': 0.02}}
-DEF_TERM_ACO = {'evals': 5000}
+DEF_TERM_ACO = {'noimprovement': True}
 
 Result = namedtuple('Result', 'tuning_budget instance quality evals time')
 
@@ -80,7 +80,7 @@ def mhruns( fname: str,
 
 # test metaheuristics
 random.seed(1)
-result = mhrun(Path('myproject/instances/20nodes/rnd0_20.tsp'), algorithm = 'ACO', fname_convdata = Path('test'))
+result = mhrun(Path('myproject/instances/20nodes/rnd0_20.tsp'), algorithm = 'ACO')
 print(result)
 # mhruns('test', instancefolder = 'myproject/instances/20nodes/test', algorithm = 'SA', iterations = 1, budget_tuned = 0, terminate = {'evals': 100})
 
