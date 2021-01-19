@@ -79,13 +79,14 @@ def iraceparams2dict(cand_params: list) -> dict:
     while len(cand_params) > 1:
         # Get and remove first and second elements.
         param = cand_params.pop(0)
-        if param[:2] == '--':
+        if param[:2] == '--': # irace
             param = param[2:]
+        elif param[:1] == '-': # smac
+            param = param[1:]
         value = cand_params.pop(0)
 
         if param not in VALID_PARAMETERS:
-            print(VALID_PARAMETERS)
-            target_runner_error('Unknown parameter \"%s\"' % (param))
+            target_runner_error('Unknown parameter \"%s\"' % (param) + '\n Valid Parameters: ' + str(VALID_PARAMETERS))
 
         params_as_dict[param] = value
 
@@ -101,7 +102,7 @@ def iraceparams2dict(cand_params: list) -> dict:
         params_as_dict['beta'] = float(params_as_dict['beta'])
         params_as_dict['Q'] = float(params_as_dict['Q'])
         params_as_dict['evaporation'] = float(params_as_dict['evaporation'])
-    
+
     # separate out termination criteria
     return params_as_dict
 
