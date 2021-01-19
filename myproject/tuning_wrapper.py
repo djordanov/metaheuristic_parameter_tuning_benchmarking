@@ -19,20 +19,19 @@
 ###############################################################################
 
 import datetime
-import os.path
-import re
-import subprocess
 import sys
+import os
 
+from pathlib import Path
 from rpy2 import robjects
 import numpy as np 
-import pandas as pd 
 
-import random
 import tsplib95
 
 from myproject.metaheuristic.sa import sa
 from myproject.metaheuristic.aco import aco
+
+SMAC_EXECUTABLE = 'smac-v2.10.03-master-778/smac'
 
 VALID_PARAMETERS = [
     'algorithm',
@@ -70,9 +69,9 @@ def dict2params(asdict):
         cand_params.append(asdict.index[i])
         cand_params.append(asdict.values[i])
     
-    return iraceparams2dict(cand_params)
+    return params2dict(cand_params)
 
-def iraceparams2dict(cand_params: list) -> dict:
+def params2dict(cand_params: list) -> dict:
     params_as_dict = {}
     
     # turn given parameters into dictionary form
@@ -103,7 +102,6 @@ def iraceparams2dict(cand_params: list) -> dict:
         params_as_dict['Q'] = float(params_as_dict['Q'])
         params_as_dict['evaporation'] = float(params_as_dict['evaporation'])
 
-    # separate out termination criteria
     return params_as_dict
 
 def separate_cfg_term_opt(params: dict) -> tuple:    
@@ -129,21 +127,71 @@ def separate_cfg_term_opt(params: dict) -> tuple:
                 cfg.pop('term_noimprovement')             
     return cfg, terminate, optimize
 
-def tune(budget: int, 
+def smac_add_fixed_params(pcs_file: str, algorithm: str, optimize: str, terminate: dict):
+
+    # set algorithm, optimize in the parameter space file...
+    fparams = {'algorithm': algorithm, 'optimize': optimize}
+    f = open(pcs_file, 'r')
+    lines = []
+    for line in f.readlines():
+        fparam = line.split(' ')[0]
+
+        # add termination conditions later
+        if fparam.startswith('term_'):
+            continue
+
+        # non-termination-condition fixed parameters
+        if fparam in fparams.keys():
+            line = '{fparam} categorical {{{value}}}[{value}]\n'.format(fparam = fparam, value = fparams[fparam])
+
+        lines.append(line)
+    f.close()
+
+    # set termination condition lines
+    for key in terminate:
+        if key == 'noimprovement':
+            temperatures = terminate['noimprovement']['temperatures']
+            accportion = terminate['noimprovement']['accportion']
+            lines.append('term_noimprovement categorical {True}[True]\n')
+            lines.append('term_noimpr_temp_val categorical {{{value}}}[{value}]\n'.format(value = temperatures))
+            lines.append('term_noimpr_accp_val categorical {{{value}}}[{value}]\n'.format(value = accportion))
+        else:
+            lines.append('term_{param} categorical {{True}}[True]\n'.format(param = key))
+            lines.append('term_{param}_val categorical {{{value}}}[{value}]\n'.format(param = key, value = terminate[key]))
+
+    f = open(pcs_file, 'w')
+    f.writelines(lines)
+    f.close()
+
+def smac(budget: int, 
+            algorithm: str,
+            terminate: dict,
+            optimize: str,
+            train_instances_dir: str) -> None:
+    test_instances_dir = train_instances_dir + '/test'
+
+    pcs_file = 'myproject/tuning-settings/{}-parameters-smac.pcs'.format(algorithm.lower())
+    smac_add_fixed_params(pcs_file, algorithm, optimize, terminate)
+    
+    os.system('''%s --instances %s --instance-suffix tsp --test-instances %s --numberOfRunsLimit %i \
+            --runObj QUALITY --pcs-file %s --algo-deterministic False \
+            --algo "python3 ./myproject/tuning_wrapper.py"''' \
+            % (SMAC_EXECUTABLE, train_instances_dir, test_instances_dir, budget, pcs_file))
+
+def irace(budget: int, 
             algorithm: str,
             terminate: dict, 
             optimize: str,
-            train_instances_dir: str,
-            train_instances_file: str) -> dict:
+            train_instances_dir: str) -> dict:
 
     robjects.r('library("irace")')
 
     # define scenario
     robjects.r('scenario = list()')
     robjects.r('scenario$trainInstancesDir = \"' + train_instances_dir + '\"')
-    robjects.r('scenario$trainInstancesFile = \"' + train_instances_file + '\"')
+    robjects.r('scenario$trainInstancesFile = \"' + train_instances_dir + '/trainInstancesFile\"')
     robjects.r('scenario$maxExperiments = ' + str(budget))
-    robjects.r('scenario$targetRunner = "/home/damian/Desktop/MA/macode/myproject/wrapper_irace.py"')
+    robjects.r('scenario$targetRunner = "/home/damian/Desktop/MA/macode/myproject/tuning_wrapper.py"')
 
     if algorithm == 'SA':
         robjects.r('parameters = readParameters("myproject/tuning-settings/sa-parameters.txt")')
@@ -185,19 +233,26 @@ if __name__=='__main__':
         sys.exit(1)
 
     # Get the parameters as command line arguments.
-    configuration_id = sys.argv[1]
-    instance_id = sys.argv[2]
-    seed = sys.argv[3]
-    instance = sys.argv[4]
-    cand_params = sys.argv[5:]
+    tuner = None
+    instance = None 
+    lparams = None
 
-    # load problem
-    problem: tsplib95.models.StandardProblem = tsplib95.load(instance)
+    # case differentiation between smac and irace
+    if (Path(sys.argv[4]).exists()):
+        # called by irace 
+        tuner = 'irace'
+        instance = sys.argv[4]
+        lparams = sys.argv[5:]
+    elif (Path(sys.argv[1]).exists()):
+        # called by smac
+        tuner = 'SMAC'
+        instance = sys.argv[1]
+        lparams = sys.argv[6:]
 
     # Tuned parameters
-    params_as_dict = iraceparams2dict(cand_params)
-    algorithm = params_as_dict.pop('algorithm')
-    cfg, terminate, optimize = separate_cfg_term_opt(params_as_dict)
+    dparams = params2dict(lparams)
+    algorithm = dparams.pop('algorithm')
+    cfg, terminate, optimize = separate_cfg_term_opt(dparams)
                   
     # Run runner
     result = None
@@ -206,6 +261,9 @@ if __name__=='__main__':
     elif algorithm == 'ACO':
         result = aco(instance = instance, cfg = cfg, terminate = terminate, fname_convdata = None)
 
-    print(result[optimize])
+    if tuner == 'irace':
+        print(result[optimize])
+    elif tuner == 'SMAC':
+        print('Result of this algorithm run: %s, %f, %i, %f, %i, %s' % ('SUCCESS', result['time'], result['evals'], result['qualdev'], 1, 0) )
     
     sys.exit(0)

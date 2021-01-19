@@ -11,7 +11,8 @@ import tsplib95
 
 from myproject.metaheuristic.sa import sa
 from myproject.metaheuristic.aco import aco
-import myproject.wrapper_irace as wrapper_irace
+from myproject.metaheuristic.ga import mga
+import myproject.tuning_wrapper as tuning_wrapper
 
 from collections import namedtuple
 
@@ -89,16 +90,16 @@ print(result)
 #             terminate = None, config = None, fconvergence = Path('myproject/data/saconv-cfgdefaultt0'))
 
 # tune
-# budget = 300
-# train_instances_dir = 'myproject/instances/20nodes'
-# train_instances_file = 'myproject/instances/20nodes/trainInstancesFile'
-# terminate = {'qualdev': 0.05}
-# optimize = 'evals'
-# name = 'qd' + str(0.05) + 't' + str(budget) + 'o' + str(optimize)
-# elite = wrapper_irace.tune(budget = budget, algorithm = 'ACO', terminate = terminate, optimize = optimize,
-#                             train_instances_dir = train_instances_dir, train_instances_file = train_instances_file)
-# os.rename(r'irace.Rdata', r'myproject/data/irace.Rdata.' + name)
-# print(elite)
+budget = 300
+train_instances_dir = 'myproject/instances/20nodes'
+train_instances_file = 'myproject/instances/20nodes/trainInstancesFile'
+terminate = DEF_TERM_SA 
+optimize = 'qualdev'
+name = 'qd' + str(0.05) + 't' + str(budget) + 'o' + str(optimize)
+elite = tuning_wrapper.irace(budget = budget, algorithm = 'SA', terminate = terminate, optimize = optimize, train_instances_dir = train_instances_dir)
+os.rename(r'irace.Rdata', r'myproject/data/irace.Rdata.' + name)
+print(elite)
+tuning_wrapper.smac(budget = budget, algorithm = 'SA', terminate = terminate, optimize = optimize, train_instances_dir = train_instances_dir)
 
 # run tuned cfg
 # config, terminate, optimize = wrapper_irace.dict2params(elite) 
