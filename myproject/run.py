@@ -11,14 +11,17 @@ import tsplib95
 
 from myproject.metaheuristic.sa import sa
 from myproject.metaheuristic.aco import aco
-from myproject.metaheuristic.ga import mga
+from myproject.metaheuristic.ga import ga
 import myproject.tuning_wrapper as tuning_wrapper
 
 from collections import namedtuple
 
+DEF_TERM_SA = {'noimprovement': {'temperatures': 5, 'accportion': 0.02}}
 DEF_CFG_ACO = {'initial_pheromone': 5000, 'antcount': 20, 'alpha': 1, 'beta': 5, 'Q': 5000, 'evaporation': 0.5, 'localsearch': None}
 DEF_TERM_SA = {'noimprovement': {'temperatures': 5, 'accportion': 0.02}}
 DEF_TERM_ACO = {'noimprovement': True}
+DEF_CFG_GA = {'popsize': 200, 'tourn_size': 8, 'mut_rate': 0.01}
+DEF_TERM_GA = {'evals': 25000, 'noimprovement': True}
 
 Result = namedtuple('Result', 'tuning_budget instance quality evals time')
 
@@ -48,6 +51,12 @@ def mhrun(instance: Path,
         cfg = DEF_CFG_ACO if config == None else config
         terminate = DEF_TERM_ACO if terminate == None else terminate
         return aco(instance = instance, cfg = cfg, terminate = terminate, fname_convdata = fname_convdata)
+
+    if algorithm == 'GA':
+        # use default configuration and termination values if none are given
+        cfg = DEF_CFG_GA if config == None else config
+        terminate = DEF_TERM_GA if terminate == None else terminate
+        return ga(instance = instance, cfg = cfg, terminate = terminate, fname_convdata = fname_convdata)
 
     else: 
         print('Error: Algorithm ' + '"' + algorithm + '" not found!')
@@ -80,8 +89,9 @@ def mhruns( fname: str,
     df.to_csv(fpath.absolute(), mode = mode, index = False)
 
 # test metaheuristics
+import random
 random.seed(1)
-result = mhrun(Path('myproject/instances/20nodes/rnd0_20.tsp'), algorithm = 'ACO')
+result = mhrun(Path('myproject/instances/20nodes/rnd0_20.tsp'), algorithm = 'GA', terminate = DEF_TERM_GA)
 print(result)
 # mhruns('test', instancefolder = 'myproject/instances/20nodes/test', algorithm = 'SA', iterations = 1, budget_tuned = 0, terminate = {'evals': 100})
 
