@@ -10,7 +10,9 @@ import tsplib95
 from myproject.metaheuristic.commons import Solution, Convdata, iterimprov_2opt
 
 def constructAntSolution(problem: tsplib95.models.StandardProblem,
-            distance_matrix: list, pheromone_matrix: list, alpha: float, beta: float) -> Solution:
+                            distance_matrix: list, 
+                            pheromone_matrix: list, 
+                            alpha: float, beta: float) -> Solution:
 
     # start tour
     tour = [random.randint(1, problem.dimension)]
@@ -45,7 +47,7 @@ def constructAntSolution(problem: tsplib95.models.StandardProblem,
                 tour.append(node)              
                 break
 
-    return Solution(tour, problem.trace_tours([tour])[0])
+    return Solution(problem.trace_tours([tour])[0], tour)
 
 def updatePheromones(pheromone_matrix: list, evaporation: float, Q: float, ants: list) -> list:
 
@@ -80,7 +82,7 @@ def aco(instance: Path,
     optimal_quality: int = problem.trace_tours(optimaltour.tours)[0]
 
     # setup...
-    best = Solution(problem.get_nodes(), problem.trace_canonical_tour()) # default
+    best = Solution(problem.trace_canonical_tour(), problem) # default
     evals = 0
     ants = [] # initialize here because its needed in termination condition
 

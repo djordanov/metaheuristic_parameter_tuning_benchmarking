@@ -5,7 +5,7 @@ from operator import attrgetter
 from collections import namedtuple
 
 Convdata = namedtuple('Convdata', 'instance qualdev evals time')
-Solution = namedtuple('Solution', 'tour qual')
+Solution = namedtuple('Solution', 'qual tour')
 
 def n2opt(tour: list, idx1: int, idx3: int) -> list:
 
@@ -31,7 +31,7 @@ def iterimprov_2opt(problem: tsplib95.models.StandardProblem,
                         mode: str) -> tuple:
 
     # setup
-    cursol = Solution(initsol.tour, initsol.qual)
+    cursol = Solution(initsol.qual, initsol.tour)
     dim = len(cursol.tour)
     evals = 0
     posmoves = [(a, b) for a in range(dim) for b in range(a, dim) if abs(a-b) > 1 and not (a == 0 and b == dim - 1)]
@@ -41,7 +41,7 @@ def iterimprov_2opt(problem: tsplib95.models.StandardProblem,
             neighsols = []
             for move in posmoves:
                 neightour = n2opt(cursol.tour, move[0], move[1])
-                neighsols.append(Solution(neightour, problem.trace_tours([neightour])[0]))    
+                neighsols.append(Solution(problem.trace_tours([neightour])[0], neightour))    
             evals += len(neighsols)
             bestneigh = min(neighsols, key = attrgetter('qual'))
 
@@ -60,7 +60,7 @@ def iterimprov_2opt(problem: tsplib95.models.StandardProblem,
                 neighqual = problem.trace_tours([neighbor])[0]
                 evals += 1
                 if neighqual < cursol.qual:
-                    cursol = Solution(neighbor, neighqual)
+                    cursol = Solution(neighqual, neighbor)
                     found = True
                     break
             if not found:

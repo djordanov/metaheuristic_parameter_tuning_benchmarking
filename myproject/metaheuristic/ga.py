@@ -19,7 +19,7 @@ def displacement_mutation(problem: tsplib95.models.StandardProblem, tour: list) 
     addback = random.randint(0, len(newtour))
     newtour = newtour[:addback] + subtour + newtour[addback:]
 
-    return Solution(newtour, problem.trace_tours([newtour])[0])
+    return Solution(problem.trace_tours([newtour])[0], newtour)
 
 def neighnodes(tour: list, node: int) -> tuple:
     idx = tour.index(node)
@@ -59,7 +59,7 @@ def edge_recombination_crossover(problem: tsplib95.models.StandardProblem, paren
                 if not nnode or len(edge_map[candidate]) < len(edge_map[nnode]):
                     nnode = candidate
 
-    return Solution(ntour, problem.trace_tours([ntour])[0])
+    return Solution(problem.trace_tours([ntour])[0], ntour)
 
 def order_crossover(problem: tsplib95.models.StandardProblem, parent1: list, parent2: list) -> Solution: 
 
@@ -105,7 +105,7 @@ def ga(instance: Path, cfg: dict, terminate: dict, fname_convdata: str):
     for _ in range(cfg['popsize']):
         tour = list(problem.get_nodes())
         random.shuffle(tour)
-        population.append(Solution(tour, problem.trace_tours([tour])[0]))
+        population.append(Solution(problem.trace_tours([tour])[0], tour))
     evals = len(population)
     best = min(population, key = attrgetter('qual'))
 
