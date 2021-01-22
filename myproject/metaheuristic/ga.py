@@ -3,6 +3,7 @@ from pathlib import Path
 import random
 import time
 from operator import attrgetter, itemgetter
+import heapq
 
 import numpy as np
 import pandas as pd 
@@ -106,6 +107,8 @@ def ga(instance: Path, cfg: dict, terminate: dict, fname_convdata: str):
         tour = list(problem.get_nodes())
         random.shuffle(tour)
         population.append(Solution(problem.trace_tours([tour])[0], tour))
+    heapq._heapify_max(population)
+    
     evals = len(population)
     best = min(population, key = attrgetter('qual'))
 
@@ -134,18 +137,12 @@ def ga(instance: Path, cfg: dict, terminate: dict, fname_convdata: str):
         evals += 1
         
         # add to population
-        worst = max(population, key = attrgetter('qual'))
-        if newsol.qual > worst.qual:
-            continue     
-        population.remove(worst)
-        population.append(newsol)
-        worst = max(population, key = attrgetter('qual'))
-
-        if newsol.qual < best.qual:
-            best = newsol        
+        worst = heapq.nlargest(1, population)[0]
+        if newsol < worst:
+            heapq._heapreplace_max(population, newsol)
             
     if convdata != None:
         print_headers: bool = False if fname_convdata.exists() else True
         pd.DataFrame(convdata).to_csv(fname_convdata.absolute(),  index = None, mode = 'a', header = print_headers)
 
-    return {'qualdev': (best.qual - optimal_quality) / optimal_quality, 'evals': evals, 'time': time.perf_counter() - starttime}
+    return {'qualdev': (heapq.nsmallest(1, population)[0].qual - optimal_quality) / optimal_quality, 'evals': evals, 'time': time.perf_counter() - starttime}
