@@ -5,6 +5,7 @@ import time
 from operator import attrgetter, itemgetter
 import heapq
 
+import numpy as np
 import pandas as pd 
 
 import tsplib95
@@ -107,36 +108,39 @@ def ga(instance: Path, cfg: dict, terminate: dict, fname_convdata: str):
         random.shuffle(tour)
         population.append(Solution(problem.trace_tours([tour])[0], tour))
     heapq._heapify_max(population)
-    
     evals = len(population)
-    best = min(population, key = attrgetter('qual'))
+    iters_noimprovement = 0
+
+    # initialize rank-based weights for selection
+    mean = 10 * cfg['popsize']
+    weights = np.linspace(mean*cfg['b'], 2 * mean - mean * cfg['b'], cfg['popsize'])
+    cum_weights = weights.cumsum()
 
     # iterate over generations...
     while not ('evals' in terminate and evals >= terminate['evals'] \
-        or 'qualdev' in terminate and best.qual < optimal_quality * (1 + terminate['qualdev']) \
+        or 'qualdev' in terminate and heapq.nsmallest(1, population)[0].qual < optimal_quality * (1 + terminate['qualdev']) \
         or 'time' in terminate and time.perf_counter() - starttime > terminate['time']
-        or 'noimprovement' in terminate and len(set([individual.qual for individual in population])) == 1):
+        or 'noimprovement' in terminate and iters_noimprovement > terminate['noimprovement']['iterations']):
         
-        # select two individuals using two tournaments
-        preselection = random.sample(population, k = cfg['tourn_size'] * 2)
-        seltourn1 = preselection[:cfg['tourn_size']]
-        seltourn2 = preselection[cfg['tourn_size']:]
-        parent1 = tournament(seltourn1)
-        parent2 = tournament(seltourn2)
+        # selection...
+        parents = random.choices(population, cum_weights = cum_weights, k = 2)
         
         # recombination
-        newsol = edge_recombination_crossover(problem, parent1.tour, parent2.tour)
+        newsol = edge_recombination_crossover(problem, parents[0].tour, parents[1].tour)
         evals += 1
 
         # maybe mutation
         if random.random() < cfg['mut_rate']:
             newsol = displacement_mutation(problem, newsol.tour)
-        evals += 1
+            evals += 11
         
         # add to population
         worst = heapq.nlargest(1, population)[0]
         if newsol < worst:
             heapq._heapreplace_max(population, newsol)
+            iters_noimprovement = 0
+        else: 
+            iters_noimprovement += 1
             
     if convdata != None:
         print_headers: bool = False if fname_convdata.exists() else True

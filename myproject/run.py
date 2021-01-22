@@ -1,9 +1,7 @@
 # pylint: disable=no-member
 
-import os
 from pathlib import Path
-import random
-import time
+import math
 
 import numpy as np
 import pandas as pd
@@ -17,20 +15,21 @@ import myproject.tuning_wrapper as tuning_wrapper
 from collections import namedtuple
 
 DEF_TERM_SA = {'noimprovement': {'temperatures': 5, 'accportion': 0.02}}
-DEF_CFG_ACO = {'initial_pheromone': 5000, 'antcount': 20, 'alpha': 1, 'beta': 5, 'Q': 5000, 'evaporation': 0.5, 'localsearch': None}
-DEF_TERM_SA = {'noimprovement': {'temperatures': 5, 'accportion': 0.02}}
-DEF_TERM_ACO = {'noimprovement': True}
-DEF_CFG_GA = {'popsize': 200, 'tourn_size': 8, 'mut_rate': 0.01}
-DEF_TERM_GA = {'evals': 25000, 'noimprovement': True}
+DEF_TERM_ACO = {'iterations': 5000}
+DEF_CFG_GA = {'popsize': 200, 'mut_rate': 0.01, 'b': 1.9}
+DEF_TERM_GA = {'noimprovement': {'iterations': 5000}, 'evals': 50000}
 
 Result = namedtuple('Result', 'tuning_budget instance quality evals time')
 
 def def_cfg_sa(problem: tsplib95.models.StandardProblem) -> dict:
     distances = [problem.get_weight(edge[0], edge[1]) for edge in problem.get_edges()]
-    initial_temperature = np.array(distances).std() # TODO is that correct?
+    initial_temperature = -np.array(distances).std() / math.log(0.47)
     repetitions = problem.dimension * (problem.dimension - 1)
-    cooling_factor = 0.95
-    return {'initial_temperature': initial_temperature, 'repetitions': repetitions, 'cooling_factor': cooling_factor}
+    return {'initial_temperature': initial_temperature, 'repetitions': repetitions, 'cooling_factor': 0.95}
+
+def def_cfg_aco(problem: tsplib95.models.StandardProblem) -> dict:
+    antcount = problem.dimension
+    return {'initial_pheromone': 1, 'antcount': antcount, 'alpha': 1, 'beta': 5, 'evaporation': 0.5, 'Q': 1}
 
 def mhrun(instance: Path,  
             algorithm: str,
@@ -48,7 +47,7 @@ def mhrun(instance: Path,
 
     if algorithm == 'ACO':
         # use default configuration and termination values if none are given
-        cfg = DEF_CFG_ACO if config == None else config
+        cfg = def_cfg_aco(problem) if config == None else config
         terminate = DEF_TERM_ACO if terminate == None else terminate
         return aco(instance = instance, cfg = cfg, terminate = terminate, fname_convdata = fname_convdata)
 
@@ -91,25 +90,25 @@ def mhruns( fname: str,
 # test metaheuristics
 import random
 random.seed(1)
-result = mhrun(Path('myproject/instances/20nodes/rnd0_20.tsp'), algorithm = 'GA', terminate = DEF_TERM_GA)
-print(result)
+# result = mhrun(Path('myproject/instances/20nodes/rnd0_20.tsp'), algorithm = 'SA')
+# print(result)
+# result = mhrun(Path('myproject/instances/20nodes/rnd0_20.tsp'), algorithm = 'ACO')
+# print(result)
+# result = mhrun(Path('myproject/instances/20nodes/rnd0_20.tsp'), algorithm = 'GA')
+# print(result)
 # mhruns('test', instancefolder = 'myproject/instances/20nodes/test', algorithm = 'SA', iterations = 1, budget_tuned = 0, terminate = {'evals': 100})
 
-# default convergence
-# sa_test_config('cfgdefaultt0', 'myproject/instances/20nodes/test', iterations = 5, budget_tuned = 0, 
-#             terminate = None, config = None, fconvergence = Path('myproject/data/saconv-cfgdefaultt0'))
-
 # tune
-budget = 300
-train_instances_dir = 'myproject/instances/20nodes'
-train_instances_file = 'myproject/instances/20nodes/trainInstancesFile'
-terminate = DEF_TERM_SA 
-optimize = 'qualdev'
-name = 'qd' + str(0.05) + 't' + str(budget) + 'o' + str(optimize)
-elite = tuning_wrapper.irace(budget = budget, algorithm = 'SA', terminate = terminate, optimize = optimize, train_instances_dir = train_instances_dir)
-os.rename(r'irace.Rdata', r'myproject/data/irace.Rdata.' + name)
-print(elite)
-tuning_wrapper.smac(budget = budget, algorithm = 'SA', terminate = terminate, optimize = optimize, train_instances_dir = train_instances_dir)
+# budget = 300
+# train_instances_dir = 'myproject/instances/20nodes'
+# train_instances_file = 'myproject/instances/20nodes/trainInstancesFile'
+# terminate = DEF_TERM_SA 
+# optimize = 'qualdev'
+# name = 'qd' + str(0.05) + 't' + str(budget) + 'o' + str(optimize)
+# elite = tuning_wrapper.irace(budget = budget, algorithm = 'SA', terminate = terminate, optimize = optimize, train_instances_dir = train_instances_dir)
+# os.rename(r'irace.Rdata', r'myproject/data/irace.Rdata.' + name)
+# print(elite)
+# tuning_wrapper.smac(budget = budget, algorithm = 'SA', terminate = terminate, optimize = optimize, train_instances_dir = train_instances_dir)
 
 # run tuned cfg
 # config, terminate, optimize = wrapper_irace.dict2params(elite) 

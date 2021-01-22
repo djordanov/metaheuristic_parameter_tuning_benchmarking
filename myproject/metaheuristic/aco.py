@@ -100,20 +100,12 @@ def aco(instance: Path,
     while not ('evals' in terminate and evals >= terminate['evals'] \
         or 'qualdev' in terminate and best.qual < optimal_quality * (1 + terminate['qualdev']) \
         or 'time' in terminate and time.perf_counter() - starttime > terminate['time'] \
-        or 'noimprovement' in terminate and len(set([ant.qual for ant in ants])) == 1): # comparing qualities is easier than comparing tours, so...
+        or 'iterations' in terminate and evals / cfg['antcount'] > terminate['iterations']): 
     
         # construct ant solutions
         ants = [constructAntSolution(problem, distance_matrix, pheromone_matrix, \
                     cfg['alpha'], cfg['beta']) for _ in range(cfg['antcount'])]
         evals += cfg['antcount']
-
-        # local search...
-        if cfg['localsearch']:
-            maxevals = np.inf if 'evals' not in terminate else terminate['evals'] - evals
-            minqual = -np.inf if 'qualdev' not in terminate else optimal_quality * (1 + terminate['qualdev'])
-            for i in range(cfg['antcount']):
-                ants[i], newevals = iterimprov_2opt(problem, ants[i], minqual = minqual, maxevals = maxevals, mode = cfg['localsearch'])
-                evals += newevals
 
         # update best reached quality (could be done a little bit more speed friendly)
         itbest = min(ants, key = attrgetter('qual'))

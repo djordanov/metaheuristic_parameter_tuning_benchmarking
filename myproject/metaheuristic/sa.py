@@ -32,8 +32,8 @@ def sa( instance: Path,
     convdata = [] if fname_convdata != None else None
 
     # problem: tsplib95.models.StandardProblem
-    problem: tsplib95.models.StandardProblem = tsplib95.load(instance.absolute())
-    optimaltour: tsplib95.models.StandardProblem = tsplib95.load(instance.with_suffix('.opt.tour').absolute())
+    problem: tsplib95.models.StandardProblem = tsplib95.load(instance)
+    optimaltour: tsplib95.models.StandardProblem = tsplib95.load(Path(instance).with_suffix('.opt.tour').absolute())
     optimal_quality: int = problem.trace_tours(optimaltour.tours)[0]
 
     # setup
