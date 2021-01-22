@@ -5,7 +5,6 @@ import time
 from operator import attrgetter, itemgetter
 import heapq
 
-import numpy as np
 import pandas as pd 
 
 import tsplib95
@@ -118,13 +117,6 @@ def ga(instance: Path, cfg: dict, terminate: dict, fname_convdata: str):
         or 'time' in terminate and time.perf_counter() - starttime > terminate['time']
         or 'noimprovement' in terminate and len(set([individual.qual for individual in population])) == 1):
         
-        # mutation
-        mutcount = sum([random.random() < cfg['mut_rate'] for _ in range(cfg['popsize'])])
-        idx_mut_sols = random.sample(list(range(len(population))), mutcount)
-        for idx_mut_sol in idx_mut_sols:
-            population[idx_mut_sol] = displacement_mutation(problem, population[idx_mut_sol].tour)
-        evals += len(idx_mut_sols)
-
         # select two individuals using two tournaments
         preselection = random.sample(population, k = cfg['tourn_size'] * 2)
         seltourn1 = preselection[:cfg['tourn_size']]
@@ -134,6 +126,11 @@ def ga(instance: Path, cfg: dict, terminate: dict, fname_convdata: str):
         
         # recombination
         newsol = edge_recombination_crossover(problem, parent1.tour, parent2.tour)
+        evals += 1
+
+        # maybe mutation
+        if random.random() < cfg['mut_rate']:
+            newsol = displacement_mutation(problem, newsol.tour)
         evals += 1
         
         # add to population
