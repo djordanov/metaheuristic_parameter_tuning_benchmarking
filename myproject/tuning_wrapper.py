@@ -174,7 +174,7 @@ def smac(budget: int,
     smac_add_fixed_params(pcs_file, algorithm, optimize, terminate)
     
     os.system('''%s --instances %s --instance-suffix tsp --test-instances %s --numberOfRunsLimit %i \
-            --runObj QUALITY --pcs-file %s --algo-deterministic False \
+            --runObj QUALITY --pcs-file %s --algo-deterministic False --validation false \
             --algo "python3 ./myproject/tuning_wrapper.py"''' \
             % (SMAC_EXECUTABLE, train_instances_dir, test_instances_dir, budget, pcs_file))
 
