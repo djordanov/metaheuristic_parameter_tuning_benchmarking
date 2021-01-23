@@ -1,11 +1,10 @@
 __pycache__/
 .Rproj.user
-instances/*
-instances/20nodes/*
-instances/100nodes/*
-.vscode/*
+myproject/instances
+.vscode
 macode.Rproj
 .*
 irace.Rdata
-acviz.py
-data/*
+myproject/data
+smac-output
+pyconcorde
