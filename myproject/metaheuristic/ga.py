@@ -62,35 +62,6 @@ def edge_recombination_crossover(problem: tsplib95.models.StandardProblem, paren
 
     return Solution(problem.trace_tours([ntour])[0], ntour)
 
-def order_crossover(problem: tsplib95.models.StandardProblem, parent1: list, parent2: list) -> Solution: 
-
-    startp = random.randint(0, len(parent1)-1)
-    endp = random.randint(startp, len(parent1))
-    part_parent1 = parent1[startp:endp].copy()
-
-    ntour = [None] * startp + part_parent1 + [None] * (endp - startp)
-
-    point_ntour = endp
-    point_parent2 = endp
-    while not point_ntour == startp:
-        if point_ntour == len(ntour):
-            point_ntour = 0
-        if point_parent2 == len(parent2):
-            point_parent2 = 0
-
-        city = parent2[point_parent2]
-        if city not in ntour:
-            ntour[point_ntour] = city
-            point_ntour += 1
-        point_parent2 += 1
-
-    return Solution(ntour, problem.trace_tours(ntour)[0])
-
-def tournament(participants: typing.List[Solution]) -> Solution:
-
-    # completely unstochastic
-    return min(participants, key = attrgetter('qual'))
-
 def ga(instance: Path, cfg: dict, terminate: dict, fname_convdata: str):
     
     starttime = time.perf_counter()
