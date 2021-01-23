@@ -15,7 +15,6 @@ import myproject.tuning_wrapper as tuning_wrapper
 from collections import namedtuple
 
 DEF_TERM_SA = {'noimprovement': {'temperatures': 5, 'accportion': 0.02}}
-DEF_TERM_ACO = {'iterations': 5000}
 DEF_CFG_GA = {'popsize': 200, 'mut_rate': 0.01, 'b': 1.9}
 DEF_TERM_GA = {'noimprovement': {'iterations': 5000}, 'evals': 50000}
 
@@ -29,7 +28,10 @@ def def_cfg_sa(problem: tsplib95.models.StandardProblem) -> dict:
 
 def def_cfg_aco(problem: tsplib95.models.StandardProblem) -> dict:
     antcount = problem.dimension
-    return {'initial_pheromone': 1, 'antcount': antcount, 'alpha': 1, 'beta': 5, 'evaporation': 0.5, 'Q': 1}
+    return {'antcount': antcount, 'alpha': 1, 'beta': 2, 'evaporation': 0.98, 'pbest': 0.05}
+
+def def_term_aco(problem: tsplib95.models.StandardProblem) -> dict:
+    return {'evals': 2500 * problem.dimension}
 
 def mhrun(instance: Path,  
             algorithm: str,
@@ -48,7 +50,7 @@ def mhrun(instance: Path,
     if algorithm == 'ACO':
         # use default configuration and termination values if none are given
         cfg = def_cfg_aco(problem) if config == None else config
-        terminate = DEF_TERM_ACO if terminate == None else terminate
+        terminate = def_term_aco(problem) if terminate == None else terminate
         return aco(instance = instance, cfg = cfg, terminate = terminate, fname_convdata = fname_convdata)
 
     if algorithm == 'GA':
