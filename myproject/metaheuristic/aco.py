@@ -9,44 +9,33 @@ import pandas as pd
 import tsplib95
 from myproject.metaheuristic.commons import Solution, Convdata, iterimprov_2opt
 
-def constructAntSolution(problem: tsplib95.models.StandardProblem,
-                            distance_matrix: list, 
-                            pheromone_matrix: list, 
-                            alpha: float, beta: float) -> Solution:
+def constructAntSolution(problem: tsplib95.models.StandardProblem, weights: np.array) -> Solution:
 
     # start tour
     tour = [random.randint(1, problem.dimension)]
 
-    # finish tours
+    # finish tour
     while len(tour) < problem.dimension:
 
         # helper variables
         current_node = tour[-1]
-        edges_distances = distance_matrix[current_node]
-        edges_pheromones = pheromone_matrix[current_node]
-        possible_moves = set(problem.get_nodes()) - set(tour)
-        
-        # move probabilities
-        unnormed_probabilities = [0] # nodes start at 1, so node 0 has a probability of ß
-        for node in problem.get_nodes():
-            if node in possible_moves:
-                weight = (1/edges_distances[node])**alpha * edges_pheromones[node]**beta
-                unnormed_probabilities.append(weight)
-            else:
-                unnormed_probabilities.append(0)
-        sum_unnormed = sum(unnormed_probabilities)
-        
-        if sum_unnormed == 0: # if all pheromone values are basically zero
-            tour.append( random.choice(list(set(problem.get_nodes()) - set(tour))) )
+        weights_slice = weights[current_node-1].copy()
+        for node in tour:
+            weights_slice[node - 1] = 0
+        sum_weights = sum(weights_slice)
+
+        if (sum(weights_slice) == 0): 
+            tour.append(random.choice( list( set(problem.get_nodes()) - set(tour)) ))
             continue
-        move_probabilities = [prob / sum_unnormed for prob in unnormed_probabilities]
+
+        probabilities = weights_slice / sum_weights
 
         # select move
         probability = random.random()
 
         probs_cumsum = 0
         for node in problem.get_nodes():
-            probs_cumsum += move_probabilities[node]
+            probs_cumsum += probabilities[node - 1]
             if probs_cumsum > probability:
                 tour.append(node)              
                 break
@@ -56,22 +45,22 @@ def constructAntSolution(problem: tsplib95.models.StandardProblem,
 def updatePheromones(pheromone_matrix: list, evaporation: float, Q: float, ants: list) -> list:
 
     # pheromone evaporation
-    new_pheromones = [[cell * evaporation for cell in row] for row in pheromone_matrix]
+    pheromone_matrix *= evaporation
 
     # pheromone adding
     for ant in ants:
         # add pheromones for last/ first edge
         firstNode = ant.tour[0]
         lastNode = ant.tour[-1]
-        new_pheromones[firstNode][lastNode] = new_pheromones[firstNode][lastNode] + (Q / ant.qual)
+        pheromone_matrix[firstNode - 1][lastNode - 1] = pheromone_matrix[firstNode - 1][lastNode - 1] + (Q / ant.qual)
 
         # add pheromones for all the other edges
         for a in range(len(ant.tour) - 1):
             nodeFrom = ant.tour[a]
             nodeTo = ant.tour[a+1]
-            new_pheromones[nodeFrom][nodeTo] = new_pheromones[nodeFrom][nodeTo] + (Q / ant.qual)
+            pheromone_matrix[nodeFrom - 1][nodeTo - 1] = pheromone_matrix[nodeFrom - 1][nodeTo - 1] + (Q / ant.qual)
 
-    return new_pheromones
+    return pheromone_matrix
 
 def aco(instance: Path, 
         cfg: dict,
@@ -91,15 +80,14 @@ def aco(instance: Path,
     ants = [] # initialize here because its needed in termination condition
 
     # distance matrix
-    distance_matrix = [[np.inf] * (problem.dimension + 1) for _ in range(problem.dimension + 1)]
+    distance_matrix = np.empty((problem.dimension, problem.dimension))
     for edge in problem.get_edges():
-        distance_matrix[edge[0]][edge[1]] = problem.get_weight(edge[0], edge[1])
+        distance_matrix[edge[0] - 1][edge[1] - 1] = float(problem.get_weight(edge[0], edge[1]))
+    np.fill_diagonal(distance_matrix, np.inf) # probably unnecessary, since these edges get excluded anyways, but it removes warning
+    distance_matrix[ distance_matrix == 0 ] = 0.1**10 # some distances are zero, which messes up computation
 
     # pheromone matrix
-    pheromone_matrix = [ [cfg['initial_pheromone']] * len(distance_matrix)] * len(distance_matrix)
-    pheromone_matrix[0] = [-np.inf] * len(distance_matrix) # nodes start with 1, so 0-x edges need to be de-facto removed
-    for i in range(len(pheromone_matrix)):
-        pheromone_matrix[i][0] = -np.inf
+    pheromone_matrix = np.full((problem.dimension, problem.dimension), cfg['initial_pheromone'])
 
     while not ('evals' in terminate and evals >= terminate['evals'] \
         or 'qualdev' in terminate and best.qual < optimal_quality * (1 + terminate['qualdev']) \
@@ -107,8 +95,8 @@ def aco(instance: Path,
         or 'iterations' in terminate and evals / cfg['antcount'] > terminate['iterations']): 
     
         # construct ant solutions
-        ants = [constructAntSolution(problem, distance_matrix, pheromone_matrix, \
-                    cfg['alpha'], cfg['beta']) for _ in range(cfg['antcount'])]
+        weights = (1/distance_matrix)**cfg['alpha'] * pheromone_matrix**cfg['beta']
+        ants = [constructAntSolution(problem, weights) for _ in range(cfg['antcount'])]
         evals += cfg['antcount']
 
         # update best reached quality (could be done a little bit more speed friendly)
