@@ -30,11 +30,15 @@ def constructAntSolution(problem: tsplib95.models.StandardProblem,
         unnormed_probabilities = [0] # nodes start at 1, so node 0 has a probability of ß
         for node in problem.get_nodes():
             if node in possible_moves:
-                probability = max((1/edges_distances[node])**alpha * edges_pheromones[node]**beta, 0.00001)
-                unnormed_probabilities.append(probability)
+                weight = (1/edges_distances[node])**alpha * edges_pheromones[node]**beta
+                unnormed_probabilities.append(weight)
             else:
                 unnormed_probabilities.append(0)
         sum_unnormed = sum(unnormed_probabilities)
+        
+        if sum_unnormed == 0: # if all pheromone values are basically zero
+            tour.append( random.choice(list(set(problem.get_nodes()) - set(tour))) )
+            continue
         move_probabilities = [prob / sum_unnormed for prob in unnormed_probabilities]
 
         # select move
