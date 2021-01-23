@@ -42,7 +42,7 @@ def constructAntSolution(problem: tsplib95.models.StandardProblem, weights: np.a
 
     return Solution(problem.trace_tours([tour])[0], tour)
 
-def updatePheromones(pheromone_matrix: list, evaporation: float, Q: float, ants: list) -> list:
+def updatePheromones(pheromone_matrix: list, evaporation: float, pheromax: float, pheromin: float, ants: list) -> list:
 
     # pheromone evaporation
     pheromone_matrix *= evaporation
@@ -52,13 +52,17 @@ def updatePheromones(pheromone_matrix: list, evaporation: float, Q: float, ants:
         # add pheromones for last/ first edge
         firstNode = ant.tour[0]
         lastNode = ant.tour[-1]
-        pheromone_matrix[firstNode - 1][lastNode - 1] = pheromone_matrix[firstNode - 1][lastNode - 1] + (Q / ant.qual)
+        pheromone_matrix[firstNode - 1][lastNode - 1] = pheromone_matrix[firstNode - 1][lastNode - 1] + (1 / ant.qual)
 
         # add pheromones for all the other edges
         for a in range(len(ant.tour) - 1):
             nodeFrom = ant.tour[a]
             nodeTo = ant.tour[a+1]
-            pheromone_matrix[nodeFrom - 1][nodeTo - 1] = pheromone_matrix[nodeFrom - 1][nodeTo - 1] + (Q / ant.qual)
+            pheromone_matrix[nodeFrom - 1][nodeTo - 1] = pheromone_matrix[nodeFrom - 1][nodeTo - 1] + (1 / ant.qual)
+
+    # upper and lower bounds
+    pheromone_matrix[ pheromone_matrix > pheromax ] = pheromax
+    pheromone_matrix[ pheromone_matrix < pheromin ] = pheromin
 
     return pheromone_matrix
 
@@ -74,10 +78,9 @@ def aco(instance: Path,
     optimaltour: tsplib95.models.StandardProblem = tsplib95.load(instance.with_suffix('.opt.tour').absolute())
     optimal_quality: int = problem.trace_tours(optimaltour.tours)[0]
 
-    # setup...
-    best = Solution(problem.trace_canonical_tour(), problem) # default
-    evals = 0
-    ants = [] # initialize here because its needed in termination condition
+    # setup initialization...
+    best = Solution(problem.trace_canonical_tour(), problem.get_nodes())
+    evals, ants = 1, []
 
     # distance matrix
     distance_matrix = np.empty((problem.dimension, problem.dimension))
@@ -86,8 +89,11 @@ def aco(instance: Path,
     np.fill_diagonal(distance_matrix, np.inf) # probably unnecessary, since these edges get excluded anyways, but it removes warning
     distance_matrix[ distance_matrix == 0 ] = 0.1**10 # some distances are zero, which messes up computation
 
-    # pheromone matrix
-    pheromone_matrix = np.full((problem.dimension, problem.dimension), cfg['initial_pheromone'])
+    # pheromones
+    dimroot_pbest = cfg['pbest']**(1/problem.dimension)
+    pheromax = (1 / (1 - cfg['evaporation'])) * (1 / best.qual)
+    pheromin = (pheromax * (1 - dimroot_pbest)) / ((problem.dimension/2 - 1) * dimroot_pbest)
+    pheromone_matrix = np.full((problem.dimension, problem.dimension), float(pheromax))
 
     while not ('evals' in terminate and evals >= terminate['evals'] \
         or 'qualdev' in terminate and best.qual < optimal_quality * (1 + terminate['qualdev']) \
@@ -95,7 +101,7 @@ def aco(instance: Path,
         or 'iterations' in terminate and evals / cfg['antcount'] > terminate['iterations']): 
     
         # construct ant solutions
-        weights = (1/distance_matrix)**cfg['alpha'] * pheromone_matrix**cfg['beta']
+        weights = pheromone_matrix**cfg['alpha'] * (1/distance_matrix)**cfg['beta']
         ants = [constructAntSolution(problem, weights) for _ in range(cfg['antcount'])]
         evals += cfg['antcount']
 
@@ -105,9 +111,13 @@ def aco(instance: Path,
             best = itbest
 
         # update pheromones...
-        pheromone_matrix = updatePheromones(pheromone_matrix, cfg['evaporation'], cfg['Q'], ants)
+        pheromone_matrix = updatePheromones(pheromone_matrix, cfg['evaporation'], pheromax, pheromin, [itbest])
 
-        # save state if convergence is looked for 
+        # update pheromone bounds
+        pheromax = (1 / (1 - cfg['evaporation'])) * (1 / best.qual)
+        pheromin = (pheromax * (1 - dimroot_pbest)) / ((problem.dimension/2 - 1) * dimroot_pbest)
+
+        # save state if convergence data is looked for 
         if convdata != None:
             qualdev = (best.qual - optimal_quality) / optimal_quality
             convdata.append(Convdata(instance.name, qualdev, evals, time.perf_counter() - starttime))
