@@ -1,11 +1,29 @@
 import tsplib95
 import random
 
-from operator import attrgetter
+import numpy as np
+from operator import attrgetter, itemgetter
 from collections import namedtuple
 
 Convdata = namedtuple('Convdata', 'instance qualdev evals time')
 Solution = namedtuple('Solution', 'qual tour')
+
+def create_candidates_list(problem: tsplib95.models.StandardProblem, cand_list_size: int) -> tuple:
+    candidates_list = {}
+    
+    for nfrom in problem.get_nodes():
+        distances_nto = [(problem.get_weight(nfrom, nto), nto) for nto in problem.get_nodes()]
+        distances_nto.sort()
+        candidates = np.array(distances_nto[1:cand_list_size+1])[:,1]
+        candidates_list[nfrom] = set(candidates)
+
+    return candidates_list
+
+def get_posmoves_nodes(candidate_list: list) -> list: # converts candidate list into list of tuples of allowed (nfrom, nto) pairings
+    posmoves_nodes = []
+    for nfrom in candidate_list:
+        posmoves_nodes += [(nfrom, nto) for nto in candidate_list[nfrom]]
+    return posmoves_nodes
 
 def n2opt(tour: list, idx1: int, idx3: int) -> list:
 
