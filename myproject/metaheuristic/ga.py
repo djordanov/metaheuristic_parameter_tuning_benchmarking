@@ -103,7 +103,7 @@ def ga(instance: Path, cfg: dict, terminate: dict, fname_convdata: str):
         # maybe mutation
         if random.random() < cfg['mut_rate']:
             newsol = displacement_mutation(problem, newsol.tour)
-            evals += 11
+            evals += 1
         
         # add to population
         worst = heapq.nlargest(1, population)[0]

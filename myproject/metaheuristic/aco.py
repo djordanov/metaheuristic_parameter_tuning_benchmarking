@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 import tsplib95
-from myproject.metaheuristic.commons import Solution, Convdata, iterimprov_2opt
+from myproject.metaheuristic.commons import Solution, Convdata
 
 def constructAntSolution(problem: tsplib95.models.StandardProblem, weights: np.array) -> Solution:
     allnodes = list(problem.get_nodes())
