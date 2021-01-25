@@ -1,0 +1,6 @@
+algorithm categorical {ACO}[ACO]
+antcount integer [1, 500] [30]
+alpha real [0.000001, 100] [1]
+beta real [0.000001, 100] [2]
+evaporation real [0.000001, 1] [0.98]
+pbest real [0.000001, 1] [0.05]

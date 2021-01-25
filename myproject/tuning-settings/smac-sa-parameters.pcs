@@ -1,0 +1,4 @@
+algorithm categorical {SA}[SA]
+initial_temperature real    [1, 10000] [500]
+repetitions integer [1, 10000] [870]
+cooling_factor real [0.000001, 1] [0.95]

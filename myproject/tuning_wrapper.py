@@ -170,7 +170,7 @@ def smac(budget: int,
             train_instances_dir: str) -> None:
     test_instances_dir = train_instances_dir + '/test'
 
-    pcs_file = 'myproject/tuning-settings/{}-parameters-smac.pcs'.format(algorithm.lower())
+    pcs_file = 'myproject/tuning-settings/smac-{}-parameters.pcs'.format(algorithm.lower())
     smac_add_fixed_params(pcs_file, algorithm, optimize, terminate)
     
     os.system('''%s --instances %s --instance-suffix tsp --test-instances %s --numberOfRunsLimit %i \
@@ -193,10 +193,8 @@ def irace(budget: int,
     robjects.r('scenario$maxExperiments = ' + str(budget))
     robjects.r('scenario$targetRunner = "/home/damian/Desktop/MA/macode/myproject/tuning_wrapper.py"')
 
-    if algorithm == 'SA':
-        robjects.r('parameters = readParameters("myproject/tuning-settings/sa-parameters.txt")')
-    elif algorithm == 'ACO':
-        robjects.r('parameters = readParameters("myproject/tuning-settings/aco-parameters.txt")')
+    fparameters = 'myproject/tuning-settings/irace-' + algorithm.lower() + '-parameters.txt'
+    robjects.r('parameters = readParameters(\"' + fparameters + '\")')
 
     # set optimize parameter
     robjects.r('parameters$domain$optimize = \"' + optimize + '\"')
