@@ -206,10 +206,10 @@ def irace(budget: int,
             robjects.r('parameters$domain$term_noimpr_temp_val = ' + str(terminate['noimprovement']['temperatures']))
             robjects.r('parameters$domain$term_noimpr_accp_val = ' + str(terminate['noimprovement']['accportion']))
         else:
-            boolparam = 'term_' + key
-            valparam = boolparam + '_val'
-            robjects.r('parameters$domain$' + boolparam + ' = \"True\"')
-            robjects.r('parameters$domain$' + valparam + ' = ' + str(terminate[key]))
+        boolparam = 'term_' + key
+        valparam = boolparam + '_val'
+        robjects.r('parameters$domain$' + boolparam + ' = \"True\"')
+        robjects.r('parameters$domain$' + valparam + ' = ' + str(terminate[key]))
 
     robjects.r('checkIraceScenario(scenario = scenario, parameters = parameters)')
     robjects.r('results = irace(scenario = scenario, parameters = parameters)')
