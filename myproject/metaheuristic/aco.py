@@ -10,35 +10,27 @@ import tsplib95
 from myproject.metaheuristic.commons import Solution, Convdata, iterimprov_2opt
 
 def constructAntSolution(problem: tsplib95.models.StandardProblem, weights: np.array) -> Solution:
+    allnodes = list(problem.get_nodes())
+    cweights = weights.copy()
 
     # start tour
-    tour = [random.randint(1, problem.dimension)]
+    tour = [random.choice(allnodes)]
 
     # finish tour
-    while len(tour) < problem.dimension:
+    while len(tour) < len(allnodes):
 
         # helper variables
         current_node = tour[-1]
-        weights_slice = weights[current_node-1].copy()
-        for node in tour:
-            weights_slice[node - 1] = 0
-        sum_weights = sum(weights_slice)
+        cweights[:,current_node-1] = 0
+        cweights_slice = cweights[current_node-1]
 
-        if (sum(weights_slice) == 0): 
-            tour.append(random.choice( list( set(problem.get_nodes()) - set(tour)) ))
+        if (sum(cweights_slice) == 0): 
+            tour.append(random.choice( list( set(allnodes) - set(tour)) ))
             continue
 
-        probabilities = weights_slice / sum_weights
-
         # select move
-        probability = random.random()
-
-        probs_cumsum = 0
-        for node in problem.get_nodes():
-            probs_cumsum += probabilities[node - 1]
-            if probs_cumsum > probability:
-                tour.append(node)              
-                break
+        node = random.choices(allnodes, weights = list(cweights_slice), k = 1)[0]
+        tour.append(node)              
 
     return Solution(problem.trace_tours([tour])[0], tour)
 
