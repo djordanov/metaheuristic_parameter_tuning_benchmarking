@@ -39,6 +39,4 @@ term_evals           "--term_evals "                c        (False)
 term_evals_val       "--term_evals_val "            c        (1000)            | term_evals == 'True'
 term_qualdev         "--term_qualdev "              c        (False)         
 term_qualdev_val     "--term_qualdev_val "          c        (0.1)             | term_qualdev == 'True'
-term_time            "--term_time "                 c        (False)         
-term_time_val        "--term_time_val "             c        (500)             | term_time == 'True'
 optimize             "--optimize "                  c        (setincode) 
