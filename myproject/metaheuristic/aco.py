@@ -88,9 +88,8 @@ def aco(instance: Path,
     pheromone_matrix = np.full((problem.dimension, problem.dimension), float(pheromax))
 
     while not ('evals' in terminate and evals >= terminate['evals'] \
-        or 'qualdev' in terminate and best.qual < optimal_quality * (1 + terminate['qualdev']) \
-        or 'time' in terminate and time.perf_counter() - starttime > terminate['time'] \
-        or 'iterations' in terminate and evals / cfg['antcount'] > terminate['iterations']): 
+        or 'qualdev' in terminate and best.qual <= optimal_quality * (1 + terminate['qualdev']) \
+        or 'time' in terminate and time.perf_counter() - starttime > terminate['time']): 
     
         # construct ant solutions
         weights = pheromone_matrix**cfg['alpha'] * (1/distance_matrix)**cfg['beta']

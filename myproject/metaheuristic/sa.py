@@ -52,11 +52,8 @@ def sa( instance: Path,
     count_temperatures_wo_improvement = 0
 
     while not ('evals' in terminate and evals >= terminate['evals'] \
-                or 'qualdev' in terminate and bestqual < optimal_quality * (1 + terminate['qualdev']) \
-                or 'time' in terminate and time.perf_counter() - starttime > terminate['time'] \
-                or 'noimprovement' in terminate \
-                    and count_temperatures_wo_improvement > terminate['noimprovement']['temperatures'] \
-                    and count_accepted / evals < terminate['noimprovement']['accportion']):
+                or 'qualdev' in terminate and bestqual <= optimal_quality * (1 + terminate['qualdev']) \
+                or 'time' in terminate and time.perf_counter() - starttime > terminate['time']):
         
         count_temperatures_wo_improvement += 1
         for _ in range(cfg['repetitions']):

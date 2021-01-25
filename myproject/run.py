@@ -15,9 +15,8 @@ import myproject.tuning_wrapper as tuning_wrapper
 
 from collections import namedtuple
 
-DEF_TERM_SA = {'noimprovement': {'temperatures': 5, 'accportion': 0.02}}
-DEF_CFG_GA = {'popsize': 200, 'mut_rate': 0.01, 'b': 1.9}
-DEF_TERM_GA = {'noimprovement': {'iterations': 5000}, 'evals': 50000}
+BASE_TERM = {'qualdev': 0, 'evals': 100000}
+DEF_CFG_GA = {'popsize': 200, 'mut_rate': 0.01, 'rank_weight': 1.9}
 
 Result = namedtuple('Result', 'tuning_budget instance quality evals time')
 

@@ -89,9 +89,8 @@ def ga(instance: Path, cfg: dict, terminate: dict, fname_convdata: str):
 
     # iterate over generations...
     while not ('evals' in terminate and evals >= terminate['evals'] \
-        or 'qualdev' in terminate and heapq.nsmallest(1, population)[0].qual < optimal_quality * (1 + terminate['qualdev']) \
-        or 'time' in terminate and time.perf_counter() - starttime > terminate['time']
-        or 'noimprovement' in terminate and iters_noimprovement > terminate['noimprovement']['iterations']):
+        or 'qualdev' in terminate and heapq.nsmallest(1, population)[0].qual <= optimal_quality * (1 + terminate['qualdev']) \
+        or 'time' in terminate and time.perf_counter() - starttime > terminate['time']):
         
         # selection...
         parents = random.choices(population, cum_weights = cum_weights, k = 2)
