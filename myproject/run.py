@@ -32,16 +32,11 @@ def def_cfg_aco(problem: tsplib95.models.StandardProblem) -> dict:
     antcount = problem.dimension
     return {'antcount': antcount, 'alpha': 1, 'beta': 2, 'evaporation': 0.98, 'pbest': 0.05}
 
-def def_term_aco(problem: tsplib95.models.StandardProblem) -> dict:
-    return {'evals': 2500 * problem.dimension}
-
 def mhrun(instance: Path,  
             algorithm: str,
             terminate: dict = None, 
             config: dict = None, 
             fname_convdata = None):
-
-    problem = tsplib95.load(instance)
 
     if algorithm == 'SA':
         # use default configuration and termination values if none are given
@@ -70,7 +65,8 @@ def mhruns(budget_tuned: int,
                 terminate: dict = None, 
                 config: dict = None):
     
-    seed = random.seed(10000)
+    seed = random.randint(1, 10000)
+    random.seed(seed)
     results = []
     entries = Path(instancefolder)
     fname = '-'.join([algorithm, str(budget_tuned), str(config), str(terminate), str(seed)]) + '.csv'
@@ -80,7 +76,8 @@ def mhruns(budget_tuned: int,
         if entry.suffix != '.tsp':
                 continue
         
-        result = mhrun(entry, algorithm = algorithm, terminate = terminate, config = config, fname_convdata = 'myproject/data/' + 'conv-' + fname)
+        result = mhrun(entry, algorithm = algorithm, terminate = terminate, config = config, \
+                        fname_convdata = Path('myproject/data/' + 'conv-' + fname))
         results.append(Result(budget_tuned, entry.name, result['qualdev'], result['evals'], result['time']))
 
     fpath = Path('myproject/data/' + 'res' + fname)
@@ -91,3 +88,6 @@ def mhruns(budget_tuned: int,
 mhruns(instancefolder = 'myproject/instances/50nodes', algorithm = 'SA', budget_tuned = 0)
 mhruns(instancefolder = 'myproject/instances/50nodes', algorithm = 'ACO', budget_tuned = 0)
 mhruns(instancefolder = 'myproject/instances/50nodes', algorithm = 'GA', budget_tuned = 0)
+
+# tuning_wrapper.irace(100, 'SA', DEF_CFG_SA, {'evals': 100, 'qualdev': 0.1}, 'qualdev', 'myproject/instances/50nodes')
+# tuning_wrapper.smac(102, 'SA', {'evals': 150, 'qualdev': 0.1}, 'qualdev', 'myproject/instances/50nodes')
