@@ -16,7 +16,9 @@ import myproject.tuning_wrapper as tuning_wrapper
 from collections import namedtuple
 
 BASE_TERM = {'qualdev': 0, 'evals': 100000}
+DEF_CFG_SA_50N = {'initial_temperature': 336, 'repetitions': 870, 'cooling_factor': 0.95}
 DEF_CFG_GA = {'popsize': 200, 'mut_rate': 0.01, 'rank_weight': 1.9}
+DEF_CFG_ACO_50N = {'antcount': 50, 'alpha': 1, 'beta': 2, 'evaporation': 0.98, 'pbest': 0.05}
 
 Result = namedtuple('Result', 'tuning_budget instance quality evals time')
 
@@ -43,20 +45,20 @@ def mhrun(instance: Path,
 
     if algorithm == 'SA':
         # use default configuration and termination values if none are given
-        cfg = def_cfg_sa(problem) if config == None else config
-        terminate = DEF_TERM_SA if terminate == None else terminate
+        cfg = DEF_CFG_SA_50N if config == None else config
+        terminate = BASE_TERM if terminate == None else terminate
         return sa(instance = instance, cfg = cfg, terminate = terminate, fname_convdata = fname_convdata)
 
     if algorithm == 'ACO':
         # use default configuration and termination values if none are given
-        cfg = def_cfg_aco(problem) if config == None else config
-        terminate = def_term_aco(problem) if terminate == None else terminate
+        cfg = DEF_CFG_ACO_50N if config == None else config
+        terminate = BASE_TERM if terminate == None else terminate
         return aco(instance = instance, cfg = cfg, terminate = terminate, fname_convdata = fname_convdata)
 
     if algorithm == 'GA':
         # use default configuration and termination values if none are given
         cfg = DEF_CFG_GA if config == None else config
-        terminate = DEF_TERM_GA if terminate == None else terminate
+        terminate = BASE_TERM if terminate == None else terminate
         return ga(instance = instance, cfg = cfg, terminate = terminate, fname_convdata = fname_convdata)
 
     else: 
