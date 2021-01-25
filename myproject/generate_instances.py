@@ -58,9 +58,6 @@ def generate_random_euclidean_instances(dir: str, count: int, cnodes: int, squar
             f.write(line + "\n")
         f.close()
 
-dir = 'myproject/instances/20nodes/'
-generate_random_euclidean_instances(dir, count = 50, cnodes = 20, squaresize = 1000)
+dir = 'myproject/instances/30nodes/'
+generate_random_euclidean_instances(dir, count = 30, cnodes = 30, squaresize = 1000)
 generate_optimal_solutions(dir)
-generate_random_euclidean_instances(dir + 'test/', count = 50, cnodes = 20, squaresize = 1000)
-generate_optimal_solutions(dir + 'test/')
-os.system('ls ' + dir + '*.tsp | sort > ' + dir + 'trainInstancesFile')
