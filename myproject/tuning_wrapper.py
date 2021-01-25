@@ -25,8 +25,7 @@ import os
 from pathlib import Path
 from rpy2 import robjects
 import numpy as np 
-
-import tsplib95
+import pandas as pd
 
 from myproject.metaheuristic.sa import sa
 from myproject.metaheuristic.aco import aco
@@ -168,21 +167,26 @@ def smac(budget: int,
             terminate: dict,
             optimize: str,
             train_instances_dir: str) -> None:
-    test_instances_dir = train_instances_dir + '/test'
+
+    outdir = 'myproject/data/smac/' + '-'.join([str(budget), algorithm, str(terminate), optimize]).replace("'", '').replace(':','')
+    if not Path(outdir).exists():
+        Path(outdir).mkdir()
 
     pcs_file = 'myproject/tuning-settings/smac-{}-parameters.pcs'.format(algorithm.lower())
     smac_add_fixed_params(pcs_file, algorithm, optimize, terminate)
-    
-    os.system('''%s --instances %s --instance-suffix tsp --test-instances %s --numberOfRunsLimit %i \
-            --runObj QUALITY --pcs-file %s --algo-deterministic False --validation false \
+    call = '''%s --instances %s --instance-suffix tsp --numberOfRunsLimit %i \
+            --runObj QUALITY --pcs-file %s --algo-deterministic False --validation false --outdir "%s"\
             --algo "python3 ./myproject/tuning_wrapper.py"''' \
-            % (SMAC_EXECUTABLE, train_instances_dir, test_instances_dir, budget, pcs_file))
+            % (SMAC_EXECUTABLE, train_instances_dir, budget, pcs_file, outdir)
+    
+    os.system(call)
 
 def irace(budget: int, 
             algorithm: str,
+            initial_parameters: dict,
             terminate: dict, 
             optimize: str,
-            train_instances_dir: str) -> dict:
+            train_instances_dir: str):
 
     robjects.r('library("irace")')
 
@@ -193,37 +197,34 @@ def irace(budget: int,
     robjects.r('scenario$maxExperiments = ' + str(budget))
     robjects.r('scenario$targetRunner = "/home/damian/Desktop/MA/macode/myproject/tuning_wrapper.py"')
 
+    logfile = 'myproject/data/irace/test' + '-'.join([str(budget), algorithm, str(terminate), optimize]) + '.Rdata'.replace("'", '').replace(':', '')
+    robjects.r('scenario$logFile = "%s"' % logfile)
+
+    # parameter domains and termination condition
     fparameters = 'myproject/tuning-settings/irace-' + algorithm.lower() + '-parameters.txt'
-    robjects.r('parameters = readParameters(\"' + fparameters + '\")')
-
-    # set optimize parameter
-    robjects.r('parameters$domain$optimize = \"' + optimize + '\"')
-
+    robjects.r('parameters = readParameters("%s")' % fparameters)
+ 
     # set termination conditions
     for key in terminate:
-        if key == 'noimprovement':
-            robjects.r('parameters$domain$term_noimprovement = \"True\"')
-            robjects.r('parameters$domain$term_noimpr_temp_val = ' + str(terminate['noimprovement']['temperatures']))
-            robjects.r('parameters$domain$term_noimpr_accp_val = ' + str(terminate['noimprovement']['accportion']))
-        else:
         boolparam = 'term_' + key
         valparam = boolparam + '_val'
         robjects.r('parameters$domain$' + boolparam + ' = \"True\"')
         robjects.r('parameters$domain$' + valparam + ' = ' + str(terminate[key]))
+        initial_parameters[boolparam] = 'True' # part of technical requirement to use starting configuration
+        initial_parameters[valparam] = terminate[key] # part of technical requirement to use starting configuration
+    
+    # set optimize parameter
+    robjects.r('parameters$domain$optimize = \"' + optimize + '\"')
 
-    robjects.r('checkIraceScenario(scenario = scenario, parameters = parameters)')
+    # initial configuration. nee'/home/damian/Desktop/MA/macode/ myproject/data/irace/testds to be hackish to include termination condition and optimization criterion
+    initial_parameters['algorithm'] = algorithm
+    initial_parameters['optimize'] = optimize
+    finitial_configuration = ('myproject/tuning-settings/config-irace-' + algorithm.lower() + '-initial-parameters.txt')
+    pd.DataFrame([initial_parameters]).to_csv(finitial_configuration, sep = '\t') # this is probably suboptimal, but its only a little suboptimal and it works, sooo
+    robjects.r('scenario$configurationsFile = "%s"' % finitial_configuration)
+
+    # actually run irace
     robjects.r('results = irace(scenario = scenario, parameters = parameters)')
-
-    # get parameter values of best configuration
-    colnames = list(robjects.r('names(results[1,])'))
-    values = np.array(robjects.r('results[1,]')).flatten()
-    elite = {'budget': budget}
-
-    for i in range(len(colnames)):
-        if not colnames[i].startswith('.'):
-            elite[colnames[i]] = values[i]
-
-    return elite
 
 if __name__=='__main__':
     if len(sys.argv) < 5:
