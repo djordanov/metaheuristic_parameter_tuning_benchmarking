@@ -39,7 +39,7 @@ def edge_recombination_crossover(problem: tsplib95.models.StandardProblem, paren
 
     # build new tour ...
     ntour = []
-    nnode = random.choice([parent1[0], parent2[0]])
+    nnode = parent1[0] if random.random() < 0.5 else parent2[0]
     while True:
 
         # add node, terminate if tour is finished, remove node from edge map

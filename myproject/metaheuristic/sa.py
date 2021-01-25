@@ -9,7 +9,7 @@ import pandas as pd
 
 import tsplib95
 
-from myproject.metaheuristic.commons import Convdata, random_n2opt
+from myproject.metaheuristic.commons import Convdata, n2opt
 
 # logging.basicConfig(level=logging.DEBUG) # logging
 
@@ -41,7 +41,10 @@ def sa( instance: Path,
     random.shuffle(curtour)
     curqual = problem.trace_tours([curtour])[0]
     evals = 1
+
     posmoves = [(a, b) for a in range(len(curtour)) for b in range(a, len(curtour)) if abs(a-b) > 1 and not (a == 0 and b == len(curtour) - 1)]
+    rand_order_posmoves = random.choices(posmoves, k = 1000)
+    move_pointer = 0
 
     temperature = cfg['initial_temperature']
     bestqual = curqual
@@ -58,8 +61,14 @@ def sa( instance: Path,
         count_temperatures_wo_improvement += 1
         for _ in range(cfg['repetitions']):
 
+            if move_pointer == len(rand_order_posmoves):
+                rand_order_posmoves = random.choices(posmoves, k = 1000)
+                move_pointer = 0
+
             # get neighbor
-            neighsol = random_n2opt(curtour, posmoves)
+            move = rand_order_posmoves[move_pointer]
+            neighsol = n2opt(curtour, move[0], move[1])
+            move_pointer += 1
             neighqual = problem.trace_tours([neighsol])[0]
             evals += 1
 

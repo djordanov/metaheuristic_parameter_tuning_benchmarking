@@ -24,7 +24,7 @@ def constructAntSolution(problem: tsplib95.models.StandardProblem, weights: np.a
         cweights[:,current_node-1] = 0
         cweights_slice = cweights[current_node-1]
 
-        if (sum(cweights_slice) == 0): 
+        if (cweights_slice == 0).all(): 
             tour.append(random.choice( list( set(allnodes) - set(tour)) ))
             continue
 
