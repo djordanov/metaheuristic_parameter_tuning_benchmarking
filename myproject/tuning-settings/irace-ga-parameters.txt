@@ -32,6 +32,7 @@
 algorithm            "--algorithm "                 c        (GA) 
 popsize              "--popsize "                   i        (1, 1000) 
 mut_rate             "--mut_rate "                  r        (0.000001, 1)
+rank_weight          "--rank_weight "               r        (0.000001, 20)
 term_evals           "--term_evals "                c        (False)         
 term_evals_val       "--term_evals_val "            c        (1000)            | term_evals == 'True'
 term_qualdev         "--term_qualdev "              c        (False)         

@@ -34,7 +34,7 @@ antcount             "--antcount "                  i        (1, 500)
 alpha                "--alpha "                     r        (0.000001, 100)
 beta                 "--beta "                      r        (0.000001, 100)
 pbest                "--pbest "                     r        (0.000001, 100)
-evaporation          "--evaporation "               r        (0.000001, 100)
+evaporation          "--evaporation "               r        (0.000001, 0.999999)
 term_evals           "--term_evals "                c        (False)         
 term_evals_val       "--term_evals_val "            c        (1000)            | term_evals == 'True'
 term_qualdev         "--term_qualdev "              c        (False)         
