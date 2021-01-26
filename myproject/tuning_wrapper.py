@@ -29,6 +29,7 @@ import pandas as pd
 
 from myproject.metaheuristic.sa import sa
 from myproject.metaheuristic.aco import aco
+from myproject.metaheuristic.ga import ga
 
 SMAC_EXECUTABLE = 'smac-v2.10.03-master-778/smac'
 
@@ -41,18 +42,15 @@ VALID_PARAMETERS = [
     'antcount',             
     'alpha',                
     'beta',                 
-    'Q',                    
-    'localsearch',
+    'pbest',                    
     'evaporation',
+    'popsize',
+    'mut_rate',
+    'rank_weight',
     'term_evals',
     'term_evals_val',
     'term_qualdev',
     'term_qualdev_val',
-    'term_time',
-    'term_time_val',
-    'term_noimprovement',
-    'term_noimpr_temp_val',
-    'term_noimpr_accp_val',
     'optimize'
 ]
 
@@ -94,12 +92,15 @@ def params2dict(cand_params: list) -> dict:
         params_as_dict['repetitions'] = int(params_as_dict['repetitions'])
         params_as_dict['cooling_factor'] = float(params_as_dict['cooling_factor'])
     elif params_as_dict['algorithm'] == 'ACO':
-        params_as_dict['initial_pheromone'] = float(params_as_dict['initial_pheromone'])
         params_as_dict['antcount'] = int(params_as_dict['antcount'])
         params_as_dict['alpha'] = float(params_as_dict['alpha'])
         params_as_dict['beta'] = float(params_as_dict['beta'])
-        params_as_dict['Q'] = float(params_as_dict['Q'])
+        params_as_dict['pbest'] = float(params_as_dict['pbest'])
         params_as_dict['evaporation'] = float(params_as_dict['evaporation'])
+    elif params_as_dict['algorithm'] == 'GA':
+        params_as_dict['popsize'] = int(params_as_dict['popsize'])
+        params_as_dict['mut_rate'] = float(params_as_dict['mut_rate'])
+        params_as_dict['rank_weight'] = float(params_as_dict['rank_weight'])
 
     return params_as_dict
 
@@ -259,6 +260,8 @@ if __name__=='__main__':
         result = sa(instance = instance, cfg = cfg, terminate = terminate, fname_convdata = None)
     elif algorithm == 'ACO':
         result = aco(instance = instance, cfg = cfg, terminate = terminate, fname_convdata = None)
+    elif algorithm == 'GA':
+        result = ga(instance = instance, cfg = cfg, terminate = terminate, fname_convdata = None)
 
     if tuner == 'irace':
         print(result[optimize])
