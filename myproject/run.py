@@ -85,9 +85,20 @@ def mhruns(budget_tuned: int,
     mode = 'a' if fpath.exists() else 'w+'
     df.to_csv(fpath.absolute(), mode = mode, index = False)
 
-mhruns(instancefolder = 'myproject/instances/50nodes', algorithm = 'SA', budget_tuned = 0)
-mhruns(instancefolder = 'myproject/instances/50nodes', algorithm = 'ACO', budget_tuned = 0)
-mhruns(instancefolder = 'myproject/instances/50nodes', algorithm = 'GA', budget_tuned = 0)
+# mhruns(instancefolder = 'myproject/instances/50nodes', algorithm = 'SA', budget_tuned = 0)
+# mhruns(instancefolder = 'myproject/instances/50nodes', algorithm = 'ACO', budget_tuned = 0)
+# mhruns(instancefolder = 'myproject/instances/50nodes', algorithm = 'GA', budget_tuned = 0)
 
-# tuning_wrapper.irace(100, 'SA', DEF_CFG_SA, {'evals': 100, 'qualdev': 0.1}, 'qualdev', 'myproject/instances/50nodes')
-# tuning_wrapper.smac(102, 'SA', {'evals': 150, 'qualdev': 0.1}, 'qualdev', 'myproject/instances/50nodes')
+# scenario optimize qualdev few evals
+tuning_wrapper.smac(budget = 5000, algorithm = 'SA', optimize = 'qualdev',
+                        terminate = {'qualdev': 0, 'evals': 1000}, train_instances_dir = 'myproject/instances/50nodes')
+tuning_wrapper.smac(budget = 5000, algorithm = 'GA', optimize = 'qualdev',
+                        terminate = {'qualdev': 0, 'evals': 1000}, train_instances_dir = 'myproject/instances/50nodes')
+tuning_wrapper.smac(budget = 5000, algorithm = 'ACO', optimize = 'qualdev',
+                        terminate = {'qualdev': 0, 'evals': 1000}, train_instances_dir = 'myproject/instances/50nodes')
+tuning_wrapper.irace(budget = 5000, algorithm = 'SA', initial_parameters = DEF_CFG_SA_50N, optimize = 'qualdev',
+                        terminate = {'qualdev': 0, 'evals': 1000}, train_instances_dir = 'myproject/instances/50nodes')
+tuning_wrapper.irace(budget = 5000, algorithm = 'GA', initial_parameters = DEF_CFG_GA, optimize = 'qualdev',
+                        terminate = {'qualdev': 0, 'evals': 1000}, train_instances_dir = 'myproject/instances/50nodes')
+tuning_wrapper.irace(budget = 5000, algorithm = 'ACO', initial_parameters = DEF_CFG_ACO_50N, optimize = 'qualdev',
+                        terminate = {'qualdev': 0, 'evals': 1000}, train_instances_dir = 'myproject/instances/50nodes')
