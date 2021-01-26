@@ -62,14 +62,14 @@ def edge_recombination_crossover(problem: tsplib95.models.StandardProblem, paren
 
     return Solution(problem.trace_tours([ntour])[0], ntour)
 
-def ga(instance: Path, cfg: dict, terminate: dict, fname_convdata: str):
+def ga(instance: str, cfg: dict, terminate: dict, fname_convdata: str):
     
     starttime = time.perf_counter()
     convdata = [] if fname_convdata != None else None
 
     # problem: tsplib95.models.StandardProblem
-    problem: tsplib95.models.StandardProblem = tsplib95.load(instance.absolute())
-    optimaltour: tsplib95.models.StandardProblem = tsplib95.load(instance.with_suffix('.opt.tour').absolute())
+    problem: tsplib95.models.StandardProblem = tsplib95.load(instance)
+    optimaltour: tsplib95.models.StandardProblem = tsplib95.load(Path(instance).with_suffix('.opt.tour').absolute())
     optimal_quality: int = problem.trace_tours(optimaltour.tours)[0]
 
     # initialize population with random tours
@@ -111,6 +111,12 @@ def ga(instance: Path, cfg: dict, terminate: dict, fname_convdata: str):
             iters_noimprovement = 0
         else: 
             iters_noimprovement += 1
+
+        # save state if convergence data is looked for 
+        if convdata != None:
+            best = heapq.nsmallest(1, population)[0]
+            qualdev = (best.qual - optimal_quality) / optimal_quality
+            convdata.append(Convdata(instance.name, qualdev, evals, time.perf_counter() - starttime))
             
     if convdata != None:
         print_headers: bool = False if fname_convdata.exists() else True

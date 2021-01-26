@@ -58,7 +58,7 @@ def updatePheromones(pheromone_matrix: list, evaporation: float, pheromax: float
 
     return pheromone_matrix
 
-def aco(instance: Path, 
+def aco(instance: str, 
         cfg: dict,
         terminate: dict, 
         fname_convdata: Path = None) -> dict:
@@ -66,8 +66,8 @@ def aco(instance: Path,
     convdata = [] if fname_convdata != None else None
 
     # problem: tsplib95.models.StandardProblem
-    problem: tsplib95.models.StandardProblem = tsplib95.load(instance.absolute())
-    optimaltour: tsplib95.models.StandardProblem = tsplib95.load(instance.with_suffix('.opt.tour').absolute())
+    problem: tsplib95.models.StandardProblem = tsplib95.load(instance)
+    optimaltour: tsplib95.models.StandardProblem = tsplib95.load(Path(instance).with_suffix('.opt.tour').absolute())
     optimal_quality: int = problem.trace_tours(optimaltour.tours)[0]
 
     # setup initialization...

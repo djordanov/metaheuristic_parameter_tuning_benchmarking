@@ -23,7 +23,7 @@ def accept(current_quality: float, neighbor_quality: float, current_temperature:
 
     return False
 
-def sa( instance: Path, 
+def sa( instance: str, 
         cfg: dict, 
         terminate: dict,
         fname_convdata: Path = None) -> dict:
