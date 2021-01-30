@@ -217,12 +217,15 @@ def irace(budget: int,
     # set optimize parameter
     robjects.r('parameters$domain$optimize = \"' + optimize + '\"')
 
-    # initial configuration. nee'/home/damian/Desktop/MA/macode/ myproject/data/irace/testds to be hackish to include termination condition and optimization criterion
+    # initial configuration. also include termination condition and optimization criterion
     initial_parameters['algorithm'] = algorithm
     initial_parameters['optimize'] = optimize
     finitial_configuration = ('myproject/tuning-settings/config-irace-' + algorithm.lower() + '-initial-parameters.txt')
     pd.DataFrame([initial_parameters]).to_csv(finitial_configuration, sep = '\t') # this is probably suboptimal, but its only a little suboptimal and it works, sooo
     robjects.r('scenario$configurationsFile = "%s"' % finitial_configuration)
+
+    # set standard output
+    sys.stdout = open('myproject/data/' + '-'.join('irace', str(budget), algorithm, str(terminate), str(optimize)) + '.log' + str(datetime.datetime.now()), 'w')
 
     # actually run irace
     robjects.r('results = irace(scenario = scenario, parameters = parameters)')
