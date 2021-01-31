@@ -175,10 +175,12 @@ def smac(budget: int,
 
     pcs_file = 'myproject/tuning-settings/smac-{}-parameters.pcs'.format(algorithm.lower())
     smac_add_fixed_params(pcs_file, algorithm, optimize, terminate)
-    call = '''%s --instances %s --instance-suffix tsp --numberOfRunsLimit %i \
-            --runObj QUALITY --pcs-file %s --algo-deterministic False --validation false --outdir "%s"\
+    call = '''%s --instances %s --instance-suffix tsp \
+                 --test-instances %s --test-instance-suffix tsp --num-seeds-per-test-instance 1 \
+            --numberOfRunsLimit %i --runObj QUALITY --pcs-file %s \
+            --algo-deterministic False --outdir "%s"\
             --algo "python3 ./myproject/tuning_wrapper.py"''' \
-            % (SMAC_EXECUTABLE, train_instances_dir, budget, pcs_file, outdir)
+            % (SMAC_EXECUTABLE, train_instances_dir, train_instances_dir + '/test', budget, pcs_file, outdir)
     
     os.system(call)
 
@@ -200,6 +202,14 @@ def irace(budget: int,
 
     logfile = 'myproject/data/irace/test' + '-'.join([str(budget), algorithm, str(terminate), optimize]) + '.Rdata'.replace("'", '').replace(':', '')
     robjects.r('scenario$logFile = "%s"' % logfile)
+
+    # set validation with test instances
+    robjects.r("scenario$testNbElites = 1")
+    robjects.r("scenario$testIterationElites = 1")
+    test_instances_dir = train_instances_dir + '/test'
+    test_instances_file = test_instances_dir + '/testInstancesFile'
+    robjects.r('scenario$testInstancesDir = \"' + test_instances_dir + '\"')
+    robjects.r('scenario$testInstancesFile = \"' + test_instances_file + '\"')
 
     # parameter domains and termination condition
     fparameters = 'myproject/tuning-settings/irace-' + algorithm.lower() + '-parameters.txt'
@@ -223,10 +233,7 @@ def irace(budget: int,
     finitial_configuration = ('myproject/tuning-settings/config-irace-' + algorithm.lower() + '-initial-parameters.txt')
     pd.DataFrame([initial_parameters]).to_csv(finitial_configuration, sep = '\t') # this is probably suboptimal, but its only a little suboptimal and it works, sooo
     robjects.r('scenario$configurationsFile = "%s"' % finitial_configuration)
-
-    # set standard output
-    sys.stdout = open('myproject/data/' + '-'.join('irace', str(budget), algorithm, str(terminate), str(optimize)) + '.log' + str(datetime.datetime.now()), 'w')
-
+    
     # actually run irace
     robjects.r('results = irace(scenario = scenario, parameters = parameters)')
 

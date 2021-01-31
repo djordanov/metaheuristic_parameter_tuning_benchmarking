@@ -85,6 +85,9 @@ def mhruns(budget_tuned: int,
     mode = 'a' if fpath.exists() else 'w+'
     df.to_csv(fpath.absolute(), mode = mode, index = False)
 
+# set standard output
+sys.stdout = open('myproject/ex' + str(datetime.datetime.now() + '.log', 'w'))
+
 # mhruns(instancefolder = 'myproject/instances/50nodes', algorithm = 'SA', budget_tuned = 0)
 # mhruns(instancefolder = 'myproject/instances/50nodes', algorithm = 'ACO', budget_tuned = 0)
 # mhruns(instancefolder = 'myproject/instances/50nodes', algorithm = 'GA', budget_tuned = 0)
