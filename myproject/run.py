@@ -1,8 +1,9 @@
 # pylint: disable=no-member
-
+import sys
 from pathlib import Path
 import random
 import math
+import datetime
 
 import numpy as np
 import pandas as pd
@@ -16,11 +17,24 @@ import myproject.tuning_wrapper as tuning_wrapper
 from collections import namedtuple
 
 BASE_TERM = {'qualdev': 0, 'evals': 100000}
-DEF_CFG_SA_50N = {'initial_temperature': 336, 'repetitions': 870, 'cooling_factor': 0.95}
+DEF_CFG_SA_50N = {'initial_temperature': (-2 * 253.83) / math.log(0.47), 'repetitions': 2450, 'cooling_factor': 0.95}
 DEF_CFG_GA = {'popsize': 200, 'mut_rate': 0.01, 'rank_weight': 1.9}
 DEF_CFG_ACO_50N = {'antcount': 50, 'alpha': 1, 'beta': 2, 'evaporation': 0.98, 'pbest': 0.05}
 
 Result = namedtuple('Result', 'tuning_budget instance quality evals time')
+
+def calc_mean_std(instancefolder: str):
+    entries = Path(instancefolder)
+    stds = []
+    for entry in entries.iterdir():
+
+        if entry.suffix != '.tsp':
+                continue
+
+        problem = tsplib95.load(entry.absolute())
+        distances = [problem.get_weight(edge[0], edge[1]) for edge in problem.get_edges()]
+        stds.append(np.array(distances).std())
+    return np.array(stds).mean()
 
 def def_cfg_sa(problem: tsplib95.models.StandardProblem) -> dict:
     distances = [problem.get_weight(edge[0], edge[1]) for edge in problem.get_edges()]
@@ -86,7 +100,7 @@ def mhruns(budget_tuned: int,
     df.to_csv(fpath.absolute(), mode = mode, index = False)
 
 # set standard output
-sys.stdout = open('myproject/ex' + str(datetime.datetime.now() + '.log', 'w'))
+sys.stdout = open('myproject/' + str(datetime.datetime.now()) + '.log', 'w')
 
 # mhruns(instancefolder = 'myproject/instances/50nodes', algorithm = 'SA', budget_tuned = 0)
 # mhruns(instancefolder = 'myproject/instances/50nodes', algorithm = 'ACO', budget_tuned = 0)
