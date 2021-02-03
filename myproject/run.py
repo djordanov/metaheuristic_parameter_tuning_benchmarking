@@ -21,6 +21,21 @@ DEF_CFG_SA_50N = {'initial_temperature': (-2 * 253.83) / math.log(0.47), 'repeti
 DEF_CFG_GA = {'popsize': 200, 'mut_rate': 0.01, 'rank_weight': 1.9}
 DEF_CFG_ACO_50N = {'antcount': 50, 'alpha': 1, 'beta': 2, 'evaporation': 0.98, 'pbest': 0.05}
 
+CFG_SA_TSMAC_1000E_OQD = {'initial_temperature': 26.556465295873004, 'repetitions': 9597, 'cooling_factor': 0.9012752030874001} # TODO REDO
+CFG_SA_TIRACE_1000E_OQD = {'initial_temperature': 27.2484, 'repetitions': 8026, 'cooling_factor': 0.1716}
+
+CFG_GA_TIRACE_1000E_OQD = {'popsize': 1, 'mut_rate': 0.851, 'rank_weight': 0.2627}
+CFG_GA_TIRACE_10000E_OQD = {'popsize': 1, 'mut_rate': 0.6601, 'rank_weight': 16.519}
+CFG_GA_TSMAC_1000E_OQD = {'popsize': 1, 'mut_rate': 0.9354300849532875, 'rank_weight': 4.2800906310470275}
+CFG_GA_TSMAC_10000E_OQD = {'popsize': 1, 'mut_rate': 0.9938586259040849, 'rank_weight': 8.208254826424472}
+
+CFG_ACO_TIRACE_1000E_OQD = {'antcount': 439, 'alpha': 3.543, 'beta': 14.8282, 'evaporation': 0.4428, 'pbest': 84.5142}
+CFG_ACO_TIRACE_10000E_OQD = {'antcount': 132, 'alpha': 0.6219, 'beta': 5.4251, 'evaporation': 0.7806, 'pbest': 62.2747}
+CFG_ACO_TSMAC_1000E_OQD = {'antcount': 67, 'alpha': 0.9553886797155056, 'beta': 13.368063653676876, \
+                           'evaporation': 0.058241608029438105, 'pbest': 0.781074288363884}
+CFG_ACO_TSMAC_10000E_OQD = {'antcount': 345, 'alpha': 3.2050014761743935, 'beta': 17.686316543093692, \
+                            'evaporation': 0.9263612615269491, 'pbest': 0.11156702049905944 }
+
 Result = namedtuple('Result', 'tuning_budget instance quality evals time')
 
 def calc_mean_std(instancefolder: str):
