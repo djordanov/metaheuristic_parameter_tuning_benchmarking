@@ -91,10 +91,10 @@ def mhruns(budget_tuned: int,
                 continue
         
         result = mhrun(entry, algorithm = algorithm, terminate = terminate, config = config, \
-                        fname_convdata = Path('myproject/data/' + 'conv-' + fname))
+                        fname_convdata = Path('myproject/data/conv/' +  fname))
         results.append(Result(budget_tuned, entry.name, result['qualdev'], result['evals'], result['time']))
 
-    fpath = Path('myproject/data/' + 'res' + fname)
+    fpath = Path('myproject/data/results/' + fname)
     df: pd.DataFrame = pd.DataFrame(results)
     mode = 'a' if fpath.exists() else 'w+'
     df.to_csv(fpath.absolute(), mode = mode, index = False)
