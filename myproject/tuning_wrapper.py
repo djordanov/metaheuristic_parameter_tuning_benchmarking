@@ -203,6 +203,12 @@ def irace(budget: int,
     logfile = 'myproject/data/irace/test' + '-'.join([str(budget), algorithm, str(terminate), optimize]) + '.Rdata'.replace("'", '').replace(':', '')
     robjects.r('scenario$logFile = "%s"' % logfile)
 
+    # parallelization
+    robjects.r('scenario$parallel = 8')
+
+    # disable scientific notation - conversion can cause clashess
+    robjects.r('options(scipen=999)')
+
     # set validation with test instances
     robjects.r("scenario$testNbElites = 1")
     robjects.r("scenario$testIterationElites = 1")
