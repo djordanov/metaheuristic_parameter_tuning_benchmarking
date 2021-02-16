@@ -18,13 +18,12 @@
 # Exit with 0 if no error, with 1 in case of error
 ###############################################################################
 
-import datetime
+from myproject.helpers import ctun_fname, params2dict, separate_cfg_term_opt
 import sys
 import os
 
 from pathlib import Path
 from rpy2 import robjects
-import numpy as np 
 import pandas as pd
 
 from myproject.metaheuristic.sa import sa
@@ -33,33 +32,6 @@ from myproject.metaheuristic.ga import ga
 
 SMAC_EXECUTABLE = 'smac-v2.10.03-master-778/smac'
 
-VALID_PARAMETERS = [
-    'algorithm',
-    'initial_temperature',
-    'repetitions',
-    'cooling_factor',
-    'initial_pheromone',
-    'antcount',             
-    'alpha',                
-    'beta',                 
-    'pbest',                    
-    'evaporation',
-    'popsize',
-    'mut_rate',
-    'rank_weight',
-    'term_evals',
-    'term_evals_val',
-    'term_qualdev',
-    'term_qualdev_val',
-    'optimize'
-]
-
-# Useful function to print errors.
-def target_runner_error(msg):
-    now = datetime.datetime.now()
-    print(str(now) + " error: " + msg)
-    sys.exit(1)
-
 def dict2params(asdict):
     cand_params = []
     for i in range(0, len(asdict)):
@@ -67,65 +39,6 @@ def dict2params(asdict):
         cand_params.append(asdict.values[i])
     
     return params2dict(cand_params)
-
-def params2dict(cand_params: list) -> dict:
-    params_as_dict = {}
-    
-    # turn given parameters into dictionary form
-    while len(cand_params) > 1:
-        # Get and remove first and second elements.
-        param = cand_params.pop(0)
-        if param[:2] == '--': # irace
-            param = param[2:]
-        elif param[:1] == '-': # smac
-            param = param[1:]
-        value = cand_params.pop(0)
-
-        if param not in VALID_PARAMETERS:
-            target_runner_error('Unknown parameter \"%s\"' % (param) + '\n Valid Parameters: ' + str(VALID_PARAMETERS))
-
-        params_as_dict[param] = value
-
-    # transform parameters
-    if params_as_dict['algorithm'] == 'SA':
-        params_as_dict['initial_temperature'] = float(params_as_dict['initial_temperature'])
-        params_as_dict['repetitions'] = int(params_as_dict['repetitions'])
-        params_as_dict['cooling_factor'] = float(params_as_dict['cooling_factor'])
-    elif params_as_dict['algorithm'] == 'ACO':
-        params_as_dict['antcount'] = int(params_as_dict['antcount'])
-        params_as_dict['alpha'] = float(params_as_dict['alpha'])
-        params_as_dict['beta'] = float(params_as_dict['beta'])
-        params_as_dict['pbest'] = float(params_as_dict['pbest'])
-        params_as_dict['evaporation'] = float(params_as_dict['evaporation'])
-    elif params_as_dict['algorithm'] == 'GA':
-        params_as_dict['popsize'] = int(params_as_dict['popsize'])
-        params_as_dict['mut_rate'] = float(params_as_dict['mut_rate'])
-        params_as_dict['rank_weight'] = float(params_as_dict['rank_weight'])
-
-    return params_as_dict
-
-def separate_cfg_term_opt(params: dict) -> tuple:    
-    optimize = params.pop('optimize')
-    cfg = params.copy()
-    terminate = {}
-
-    for key in params:
-        if key.startswith('term_'):
-            if key == 'term_evals' and cfg[key] == 'True':
-                terminate['evals'] = int(cfg.pop('term_evals_val'))
-                cfg.pop('term_evals')
-            if key == 'term_qualdev' and cfg[key] == 'True':
-                terminate['qualdev'] = float(cfg.pop('term_qualdev_val')) 
-                cfg.pop('term_qualdev')
-            if key == 'term_time' and cfg[key] == 'True':
-                terminate['time'] = int(cfg.pop('term_time_val'))
-                cfg.pop('term_time')
-            if key == 'term_noimprovement' and cfg[key] == 'True':
-                terminate['noimprovement'] = {}
-                terminate['noimprovement']['temperatures'] = float(cfg.pop('term_noimpr_temp_val'))
-                terminate['noimprovement']['accportion'] = float(cfg.pop('term_noimpr_accp_val'))
-                cfg.pop('term_noimprovement')             
-    return cfg, terminate, optimize
 
 def smac_add_fixed_params(pcs_file: str, algorithm: str, optimize: str, terminate: dict):
 
@@ -169,18 +82,18 @@ def smac(budget: int,
             optimize: str,
             train_instances_dir: str) -> None:
 
-    outdir = 'myproject/data/smac/' + '-'.join([str(budget), algorithm, str(terminate), optimize]).replace("'", '').replace(':','')
+    outdir = 'myproject/data/smac/' + ctun_fname(budget, algorithm, terminate, optimize)
     if not Path(outdir).exists():
         Path(outdir).mkdir()
 
     pcs_file = 'myproject/tuning-settings/smac-{}-parameters.pcs'.format(algorithm.lower())
     smac_add_fixed_params(pcs_file, algorithm, optimize, terminate)
     call = '''%s --instances %s --instance-suffix tsp \
-                 --test-instances %s --test-instance-suffix tsp --num-seeds-per-test-instance 1 \
+                 --validation false --num-seeds-per-test-instance 1 \
             --numberOfRunsLimit %i --runObj QUALITY --pcs-file %s \
             --algo-deterministic False --outdir "%s"\
             --algo "python3 ./myproject/tuning_wrapper.py"''' \
-            % (SMAC_EXECUTABLE, train_instances_dir, train_instances_dir + '/test', budget, pcs_file, outdir)
+            % (SMAC_EXECUTABLE, train_instances_dir, budget, pcs_file, outdir)
     
     os.system(call)
 
@@ -200,7 +113,7 @@ def irace(budget: int,
     robjects.r('scenario$maxExperiments = ' + str(budget))
     robjects.r('scenario$targetRunner = "/home/damian/Desktop/MA/macode/myproject/tuning_wrapper.py"')
 
-    logfile = 'myproject/data/irace/test' + '-'.join([str(budget), algorithm, str(terminate), optimize]) + '.Rdata'.replace("'", '').replace(':', '')
+    logfile = 'myproject/data/irace/' + ctun_fname(budget, algorithm, terminate, optimize)
     robjects.r('scenario$logFile = "%s"' % logfile)
 
     # parallelization

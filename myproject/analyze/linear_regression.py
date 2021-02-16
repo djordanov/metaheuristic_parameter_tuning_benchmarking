@@ -4,9 +4,9 @@ import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression
 
 fnames = {
-    'SA': 'myproject/data/conv/conv-SA-0-None-None-4836.csv',
-    'ACO': 'myproject/data/conv/conv-ACO-0-None-None-620.csv',
-    'GA': 'myproject/data/conv/conv-GA-0-None-None-4987.csv'
+    'SA': 'myproject/data/conv/SA-0-None-None.csv',
+    'ACO': 'myproject/data/conv/ACO-0-None-None.csv',
+    'GA': 'myproject/data/conv/GA-0-None-None.csv'
 }
 
 time2evals = {
