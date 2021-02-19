@@ -1,81 +1,44 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib import ticker
 
-from myproject.analyze.common_definitions import LINE_COLORS
-
-fnames_tuning = {
-    1000: {
-        'smac': {
-            'SA': 'myproject/data/smac/5000-SA-{qualdev 0, evals 1000}-qualdev/NoScenarioFile/detailed-traj-run-114979431.csv',
-            'GA': 'myproject/data/smac/5000-GA-{qualdev 0, evals 1000}-qualdev/NoScenarioFile/detailed-traj-run-482289583.csv',
-            'ACO': 'myproject/data/smac/5000-ACO-{qualdev 0, evals 1000}-qualdev/NoScenarioFile/detailed-traj-run-103952363.csv'
-        },
-        'irace': {
-            'SA': "myproject/data/irace/test5000-SA-{'qualdev': 0, 'evals': 1000}-qualdev",
-            'GA': "myproject/data/irace/test5000-GA-{'qualdev': 0, 'evals': 1000}-qualdev",
-            'ACO': "myproject/data/irace/test5000-ACO-{'qualdev': 0, 'evals': 1000}-qualdev"
-        }
-    },
-    10000: {
-        'smac': {
-            'SA': 'myproject/data/smac/5000-SA-{qualdev 0, evals 10000}-qualdev/NoScenarioFile/detailed-traj-run-372562634.csv',
-            'GA': 'myproject/data/smac/5000-GA-{qualdev 0, evals 10000}-qualdev/NoScenarioFile/detailed-traj-run-929863747.csv',
-            'ACO': 'myproject/data/smac/5000-ACO-{qualdev 0, evals 10000}-qualdev/NoScenarioFile/detailed-traj-run-734026793.csv'
-        },
-        'irace': {
-            'SA': "myproject/data/irace/test5000-SA-{'qualdev': 0, 'evals': 10000}-qualdev",
-            'GA': "myproject/data/irace/test5000-GA-{'qualdev': 0, 'evals': 10000}-qualdev",
-            'ACO': "myproject/data/irace/test5000-ACO-{'qualdev': 0, 'evals': 10000}-qualdev"
-        }
-    },
-    100000: {}
-}
-
-def tuning_trajectory_smac(fname, algorithm, ax):
-    df = pd.read_csv(fname, header = None, skiprows = 1)
-    estimated_training_performance_incumbent = pd.to_numeric(df[1], errors = 'coerce')
-    smac_cpu_time = df[4]
-    smac_cpu_time = smac_cpu_time * 5000 / smac_cpu_time[len(smac_cpu_time)-1] # normalize time
-    label = '{} tuned by smac'.format(algorithm)
-    ax.plot(smac_cpu_time, estimated_training_performance_incumbent, 
-             color = LINE_COLORS[algorithm], linestyle = '--', label = label)
-
-def tuning_trajectory_irace(fname, algorithm, ax):
-    fiterations = fname + '-iterations.csv'
-    ftest_experiments = fname + '-test-experiments.csv'
-
-    test_experiments = pd.read_csv(ftest_experiments)
-    test_experiments_mean = test_experiments.mean()
-    iterations = pd.read_csv(fiterations)
-
-    tuning_trajectory = [( row.experiments, test_experiments_mean[str(row.elite)] ) \
-                             for index, row in iterations.iterrows()]
-    df = pd.DataFrame(tuning_trajectory, columns = ['experiments', 'performance'])
-    df.experiments = df.experiments.cumsum()
+from myproject.analyze.common_definitions import LINE_COLORS, LINE_STYLES, MARKERS
+from myproject.helpers import tun_traj
     
-    label = '{} tuned by irace'.format(algorithm)
-    ax.plot('experiments', 'performance', data = df, \
-             color = LINE_COLORS[algorithm], marker = 'o', label = label)
-    
-fig, axs = plt.subplots(nrows = 3, ncols = 1, sharex = 'col', sharey = 'col')
-fig.tight_layout()
+termination_conditions = [
+    {'qualdev': 0, 'evals': 1000}, 
+    {'qualdev': 0, 'evals': 10000}, 
+    {'qualdev': 0, 'evals': 100000}
+]
+optimize = 'qualdev'
+algorithms = ['SA', 'ACO', 'GA']
 
-for i, evals in enumerate(fnames_tuning):
-    ax = axs[i]
-    for tuner in fnames_tuning[evals].keys():
-        for metaheuristic in fnames_tuning[evals][tuner].keys():
-            fname = fnames_tuning[evals][tuner][metaheuristic]
-            if tuner == 'smac':
-                tuning_trajectory_smac(fname, metaheuristic, ax)
-            elif tuner == 'irace':
-                tuning_trajectory_irace(fname, metaheuristic, ax)
+fig, ax = plt.subplots(nrows = len(termination_conditions), ncols = 1, sharex = True, sharey = True)
 
-    ax.set_title('Evals = ' + str(evals))
-    ax.legend()
-    ax.set_ylabel('Quality Deviation to Optimum')
-    ax.set_xlim(0, 5000)
-#    ax.set_ylim(0, 0.5) # this needs to be adjusted depending on evals/ depending on the data
+for i, terminate in enumerate(termination_conditions):
+    for algorithm in algorithms:
+        for tuner in ['irace', 'smac']:
+            traj = tun_traj(tuner = tuner, tuning_budget = 5000, algorithm = algorithm, terminate = terminate, optimize = optimize)
+            ax[i].plot(traj['runs'], traj[optimize], label = '{} tuned by {}'.format(algorithm, tuner), 
+                color = LINE_COLORS[algorithm], linestyle = LINE_STYLES[tuner])
 
-plt.xlabel('Experiments')
-plt.show()
-# plt.savefig('myproject/data/figures/tuning_trajectories.png', dpi = 1000)
+    # axes scales and ticks
+    ax[i].set(xscale = 'log', xticks = [100, 1000, 5000], yscale = 'log', yticks = [0.1, 0.5, 1, 2, 10])
+    ax[i].tick_params(labelsize = 5)
+    ax[i].get_xaxis().set_major_formatter(ticker.ScalarFormatter())
+    ax[i].get_yaxis().set_major_formatter(ticker.ScalarFormatter())
+
+    # axis grid and title
+    ax[i].grid()
+    ax[i].set_title('Metaheuristics tuned with termination after ' + str(terminate['evals']) + ' evals', size = 5, pad = 3)
+
+# legend
+handles, labels = ax[0].get_legend_handles_labels()
+fig.legend(handles, labels, loc='right')
+
+# axes labels
+fig.text(0.5, 0.05, "Experiments", ha="center", va="center")
+fig.text(0.05, 0.5, "{} as proportion of {} without tuning".format(optimize, optimize), ha="center", va="center", rotation=90)
+fig.subplots_adjust(hspace=0.25)
+
+fig.savefig('myproject/data/figures/tuning_trajectories.png', dpi = 2000)

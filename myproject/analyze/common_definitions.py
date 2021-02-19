@@ -3,3 +3,13 @@ LINE_COLORS = {
     'GA': 'green',
     'ACO': 'red'
 }
+
+LINE_STYLES = {
+    'irace': 'dashed',
+    'smac': 'dotted'
+}
+
+MARKERS = {
+    'irace': 'o',
+    'smac': 's'
+}

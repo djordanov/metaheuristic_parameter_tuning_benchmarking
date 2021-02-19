@@ -43,6 +43,20 @@ VALID_PARAMETERS = [
     'optimize'
 ]
 
+# configurations were copied manually :)
+
+final_elites_irace = [
+    ('ACO', {'antcount': 439, 'alpha': 3.543, 'beta': 14.8282, 'pbest': 84.5142, 'evaporation': 0.4428}, BASE_TERM, 'qualdev'),
+    ('ACO', {'antcount': 132, 'alpha': 0.6219, 'beta': 5.4251, 'pbest': 62.2747, 'evaporation': 0.7806}, BASE_TERM, 'qualdev'),
+    ('ACO', {'antcount': 47, 'alpha': 0.8079, 'beta': 6.6904, 'pbest': 0.7138, 'evaporation': 0.9638}, BASE_TERM, 'qualdev'),
+    ('GA', {'popsize': 1, 'mut_rate': 0.8581, 'rank_weight': 0.2627}, BASE_TERM, 'qualdev'),
+    ('GA', {'popsize': 1, 'mut_rate': 0.6601, 'rank_weight': 16.519}, BASE_TERM, 'qualdev'),
+    ('GA', {'popsize': 281, 'mut_rate': 0.5634, 'rank_weight': 0.9341}, BASE_TERM, 'qualdev'),
+    ('SA', {'initial_temperature': 22.1271, 'repetitions': 7902, 'cooling_factor': 0.8808}, BASE_TERM, 'qualdev'),
+    ('SA', {'initial_temperature': 258.6476, 'repetitions': 857, 'cooling_factor': 0.6707}, BASE_TERM, 'qualdev'),
+    ('SA', {'initial_temperature': 235.7388, 'repetitions': 3831, 'cooling_factor': 0.8593}, BASE_TERM, 'qualdev')
+]
+
 def calc_mean_std(instancefolder: str):
     entries = Path(instancefolder)
     stds = []
@@ -159,25 +173,7 @@ def separate_cfg_term_opt(params: dict) -> tuple:
     return cfg, terminate, optimize
 
 
-# build tuning trajectory dataframe 
-def tun_traj_irace(tuning_budget: int, algorithm: str, terminate: dict, optimize: str) -> pd.DataFrame:
-    fname = 'myproject/data/irace/' + ctun_fname(tuning_budget, algorithm, terminate, optimize)
-    fiterations = fname + '-iterations.csv'
-    ftest_experiments = fname + '-test-experiments.csv'
-    trajectory = pd.read_csv(fiterations)
-    elite_qualities = pd.read_csv(ftest_experiments).mean()
-    trajectory['elite_quality'] = [elite_qualities[str(elite)] for elite in trajectory.elite]
-
-    # add default run as starting point
-    mhrun_fname = cmhrun_fname(algorithm, DEF_CFGS[algorithm], BASE_TERM, optimize)
-    mhrun_results = pd.read_csv('myproject/data/results/' + mhrun_fname + '.csv')
-
-    default_quality = mhrun_results.mean()['quality'] # TODO add optimize
-    trajectory = trajectory.append(
-        pd.Series({'iteration': 0, 'experiments': 0, 'elite': 0, 'elite_quality': default_quality}, name = 0)
-    )
-
-    return trajectory
+### build tuning trajectory dataframe ###
     
 def incumbents_smac(fname: str) -> pd.DataFrame:
     folder = Path('myproject/data/smac/' + fname + '/NoScenarioFile')
@@ -191,12 +187,12 @@ def incumbents_smac(fname: str) -> pd.DataFrame:
     incumbent = None
     dcs = pd.get_dummies(configurations).cumsum()
     for i in range(0, len(dcs)):
-        run = i
+        runs = i
         rinc = dcs.loc[i].idxmax()
         if rinc != incumbent:
             incumbent = rinc
-            changing_points.append((run, incumbent))
-    incumbents = pd.DataFrame(data = changing_points, columns = ['run', 'incumbent'])
+            changing_points.append((runs, incumbent))
+    incumbents = pd.DataFrame(data = changing_points, columns = ['runs', 'incumbent'])
 
     # join Configurations
     ptraj = list(filter(lambda file: 'detailed-traj-run' in file.name, folder.iterdir()))[0]
@@ -206,20 +202,61 @@ def incumbents_smac(fname: str) -> pd.DataFrame:
         
     return incumbents
 
-def tun_traj_smac(tuning_budget, fname: str) -> pd.DataFrame:
-    fname = '5000-SA-{qualdev 0, evals 1000}-qualdev' 
+def elite_results_smac(tuning_budget: int, algorithm: str, terminate: dict, optimize: str) -> pd.DataFrame:
+    tun_fname = ctun_fname(tuning_budget, algorithm, terminate, optimize)
 
     # load incumbents with configurations
-    incumbents = incumbents_smac(fname)
+    incumbents = incumbents_smac(tun_fname)
+    incumbent_qualities = []
 
     # join configuration qualities
-    incumbents['quality'] = np.nan
     for i in incumbents.index:
-        string_configuration_smac = incumbents[i]['Configuration']
+        string_configuration_smac = incumbents.iloc[i]['Configuration']
         cand_params = config_to_cand_params_smac(string_configuration_smac)
         algorithm, config, terminate, optimize = from_cand_params(cand_params)
 
         mhrun_fname = cmhrun_fname(algorithm, config, terminate, optimize)
         mhrun_results = pd.read_csv('myproject/data/results/' + mhrun_fname + '.csv')
-        incumbents.iloc[i]['quality'] = mhrun_results.mean()
-    return incumbents # TODO does this work?
+        incumbent_qualities.append(pd.to_numeric(mhrun_results[optimize], errors = 'coerce').mean())
+
+    elite_results = incumbents[['runs']].copy()
+    elite_results[optimize] = incumbent_qualities
+    return elite_results
+
+def elite_results_irace(tuning_budget: int, algorithm: str, terminate: dict, optimize: str) -> pd.DataFrame:
+    fname = 'myproject/data/irace/' + ctun_fname(tuning_budget, algorithm, terminate, optimize)
+    fiterations = fname + '-iterations.csv'
+    ftest_experiments = fname + '-test-experiments.csv'
+    iterations = pd.read_csv(fiterations)
+    elite_qualities = pd.read_csv(ftest_experiments).mean()
+    
+    elite_results = pd.DataFrame({
+        'runs': iterations['experiments'].cumsum(),
+        optimize: [elite_qualities[str(elite)] for elite in iterations.elite]
+    })
+
+    return elite_results
+
+def tun_traj(tuner: str, tuning_budget: int, algorithm: str, terminate: dict, optimize: str):
+    elite_results = elite_results_irace(tuning_budget, algorithm, terminate, optimize) if tuner == 'irace' \
+        else elite_results_smac(tuning_budget, algorithm, terminate, optimize)
+    
+    # get default result
+    mhrun_fname = cmhrun_fname(algorithm, DEF_CFGS[algorithm], terminate, optimize)
+    mhrun_results = pd.read_csv('myproject/data/results/' + mhrun_fname + '.csv')
+    default_result = mhrun_results.mean()[optimize]
+
+    # build tuning trajectory (number of runs - result in comparison to default result) ...
+    nruns = list(range(tuning_budget + 1))
+    results = np.full((tuning_budget + 1,), np.nan)
+    results[0] = default_result
+    for runs in elite_results['runs']:
+        results[runs] = elite_results.loc[elite_results['runs'] == runs][optimize]
+
+    # create dataframe and pad in result of runs without incumbent
+    traj = pd.DataFrame({'runs': nruns, optimize: results})
+    traj[optimize] = traj[optimize].pad()
+
+    # move to tuning result as a proportion of default result
+    traj[optimize] = traj[optimize] / default_result
+    return traj

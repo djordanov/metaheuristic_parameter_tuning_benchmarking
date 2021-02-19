@@ -1,25 +1,23 @@
 # pylint: disable=no-member
-import sys
 from pathlib import Path
 import random
-import datetime
 import itertools
 
 import pandas as pd
-from rpy2 import robjects
 
 from myproject.metaheuristic.sa import sa
 from myproject.metaheuristic.aco import aco
 from myproject.metaheuristic.ga import ga
 import myproject.tuning_wrapper as tuning_wrapper
 
-from myproject.helpers import BASE_TERM, DEF_CFG_SA_50N, DEF_CFG_GA, DEF_CFG_ACO_50N
+from myproject.helpers import BASE_TERM, DEF_CFG_SA_50N, DEF_CFG_GA, DEF_CFG_ACO_50N, DEF_CFGS
 from myproject.helpers import cmhrun_fname, ctun_fname
 from myproject.helpers import incumbents_smac, config_to_cand_params_smac, from_cand_params
+from myproject.helpers import final_elites_irace
 
 from collections import namedtuple
 
-Result = namedtuple('Result', 'tuning_budget instance quality evals time')
+Result = namedtuple('Result', 'tuning_budget instance qualdev evals time')
 
 def mhrun(instance: Path,  
             algorithm: str,
@@ -79,18 +77,15 @@ def mhruns(budget_tuned: int,
 
 ### Run tuners ###
 
-metaheuristics = [ ]
-tuners = ['smac']
+metaheuristics = []
+tuners = []
 
-default_configs = {
-    'GA': DEF_CFG_GA
-}
-termination_conditions = [{'qualdev': 0, 'evals': 100000}]
+termination_conditions = []
 
 for constellation in itertools.product(tuners, metaheuristics, termination_conditions):
     print(constellation)
     if constellation[0] == 'irace':
-        tuning_wrapper.irace(budget = 5000, algorithm = constellation[1], initial_parameters = default_configs[constellation[1]], 
+        tuning_wrapper.irace(budget = 5000, algorithm = constellation[1], initial_parameters = DEF_CFGS[constellation[1]], 
                         optimize = 'qualdev', terminate = constellation[2], train_instances_dir = 'myproject/instances/50nodes')
     if constellation[0] == 'smac':
         tuning_wrapper.smac(budget = 5000, algorithm = constellation[1], optimize = 'qualdev',
@@ -101,8 +96,12 @@ for constellation in itertools.product(tuners, metaheuristics, termination_condi
 
 # smac ...
 tuning_budgets = [5000]
-metaheuristics = ['SA', 'ACO']
-termination_conditions = [{'qualdev': 0, 'evals': 1000}, {'qualdev': 0, 'evals': 10000}, {'qualdev': 0, 'evals': 100000}]
+metaheuristics = ['SA', 'ACO', 'GA']
+termination_conditions = [
+    {'qualdev': 0, 'evals': 1000}, 
+    {'qualdev': 0, 'evals': 10000}, 
+    {'qualdev': 0, 'evals': 100000}
+]
 optimizes = ['qualdev']
 
 for constellation in itertools.product(tuning_budgets, metaheuristics, termination_conditions, optimizes):
@@ -118,3 +117,34 @@ for constellation in itertools.product(tuning_budgets, metaheuristics, terminati
             print(Path('myproject/data/results/' + mhrun_fname).absolute())
             print('Metaheuristic run with ' + str((algorithm, constellation[0], config, terminate, optimize)))
             mhruns(constellation[0], 'myproject/instances/50nodes/test', algorithm, terminate, config)
+
+    # create convergence Files for last incumbent with base termination condition
+    string_config_smac = incumbents['Configuration'][len(incumbents) - 1]
+    cand_params = config_to_cand_params_smac(string_config_smac)
+    algorithm, config, terminate, optimize = from_cand_params(cand_params)
+
+    mhrun_fname = cmhrun_fname(algorithm, config, BASE_TERM, optimize)
+    if not Path('myproject/data/results/' + mhrun_fname + '.csv').exists():
+        print(Path('myproject/data/results/' + mhrun_fname).absolute())
+        print('Metaheuristic run with ' + str((algorithm, constellation[0], config, terminate, optimize)))
+        mhruns(constellation[0], 'myproject/instances/50nodes/test', algorithm, terminate, config)
+
+### Postprocessing irace ###
+
+# create convergence files with final elite and base termination condition
+
+for elite in final_elites_irace:
+    mhrun_fname = cmhrun_fname(elite[0], elite[1], elite[2], elite[3])
+    if not Path('myproject/data/results/' + mhrun_fname + '.csv').exists():
+        print(Path('myproject/data/results/' + mhrun_fname).absolute())
+        print('Metaheuristic run with ' + str((elite[0], elite[1], elite[2], elite[3])))
+        mhruns(5000, 'myproject/instances/50nodes/test', elite[0], elite[2], elite[1])
+
+# create convergence files for base cfgs and termination conditions
+for terminate in termination_conditions:
+    for metaheuristic in metaheuristics:
+        mhrun_fname = cmhrun_fname(metaheuristic, DEF_CFGS[metaheuristic], terminate, 'qualdev')
+        if not Path('myproject/data/results/' + mhrun_fname + '.csv').exists():
+            print(metaheuristic)
+            print(terminate)
+            mhruns(0, 'myproject/instances/50nodes/test', metaheuristic, terminate, DEF_CFGS[metaheuristic])
