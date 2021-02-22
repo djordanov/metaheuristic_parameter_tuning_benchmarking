@@ -38,21 +38,26 @@ def edge_recombination_crossover(problem: tsplib95.models.StandardProblem, paren
 
     # build new tour ...
     ntour = []
-    nnode = parent1[0] if random.random() < 0.5 else parent2[0]
-    while True:
 
+    # select first node as node with the least entries
+    nnode = None
+    for candidate in edge_map:
+        if not nnode or len(edge_map[candidate]) < len(edge_map[nnode]):
+            nnode = candidate
+
+    while True:
         # add node, terminate if tour is finished, remove node from edge map
         ntour.append(nnode)
         if len(ntour) == len(parent1):
             break
-        for candidates in edge_map.values():
-            if nnode in candidates:
-                candidates.remove(nnode)
+        for unselected in edge_map.values():
+            if nnode in unselected:
+                unselected.remove(nnode)
 
         # select the next node
         candidates = edge_map.pop(nnode)
         if len(candidates) == 0:
-            nnode = random.choice(list(set(parent1) - set(ntour))) # performance improvement here
+            nnode = random.choice(list(set(parent1) - set(ntour))) # performance improvement possible here
         else:
             nnode = None
             for candidate in candidates:
