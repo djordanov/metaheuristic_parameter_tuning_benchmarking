@@ -113,7 +113,7 @@ def irace(budget: int,
     robjects.r('scenario$maxExperiments = ' + str(budget))
     robjects.r('scenario$targetRunner = "/home/damian/Desktop/MA/macode/myproject/tuning_wrapper.py"')
 
-    logfile = 'myproject/data/irace/' + ctun_fname(budget, algorithm, terminate, optimize)
+    logfile = 'myproject/data/irace/' + ctun_fname(budget, algorithm, terminate, optimize) + '.Rdata'
     robjects.r('scenario$logFile = "%s"' % logfile)
 
     # parallelization
@@ -195,6 +195,6 @@ if __name__=='__main__':
     if tuner == 'irace':
         print(result[optimize])
     elif tuner == 'SMAC':
-        print('Result of this algorithm run: %s, %f, %i, %f, %i, %s' % ('SUCCESS', result['time'], result['evals'], result['qualdev'], 1, 0) )
+        print('Result of this algorithm run: %s, %f, %i, %f, %i, %s' % ('SUCCESS', result['time'], result['evals'], result[optimize], 1, 0) )
     
     sys.exit(0)
