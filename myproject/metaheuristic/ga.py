@@ -1,4 +1,3 @@
-import typing
 from pathlib import Path
 import random
 import time
@@ -84,7 +83,7 @@ def ga(instance: str, cfg: dict, terminate: dict, fname_convdata: str):
 
     # initialize rank-based weights for selection
     mean = 10 * cfg['popsize']
-    weights = np.linspace(mean*cfg['rank_weight'], 2 * mean - mean * cfg['rank_weight'], cfg['popsize'])
+    weights = np.linspace(2 * mean - mean * cfg['rank_weight'], mean * cfg['rank_weight'], cfg['popsize'])
     cum_weights = weights.cumsum()
 
     # iterate over generations...
