@@ -11,34 +11,28 @@ termination_conditions = [
     {'qualdev': 0, 'evals': 100000}
 ]
 optimize = 'qualdev'
-algorithms = ['SA', 'ACO', 'GA']
+algorithms = ['SA', 'ACO']
 
-fig, ax = plt.subplots(nrows = len(termination_conditions), ncols = 1, sharex = True, sharey = True)
+for terminate in termination_conditions:
 
-for i, terminate in enumerate(termination_conditions):
+    fig, ax = plt.subplots(figsize=(5.5, 3.14))
+
     for algorithm in algorithms:
         for tuner in ['irace', 'smac']:
             traj = tun_traj(tuner = tuner, tuning_budget = 5000, algorithm = algorithm, terminate = terminate, optimize = optimize)
-            ax[i].plot(traj['runs'], traj[optimize], label = '{} tuned by {}'.format(algorithm, tuner), 
-                color = LINE_COLORS[algorithm], linestyle = LINE_STYLES[tuner])
+            ax.plot(traj['runs'], traj[optimize], label = '{} tuned by {}'.format(algorithm, tuner), 
+                color = LINE_COLORS[algorithm], linestyle = LINE_STYLES[tuner], alpha = 0.5)
 
-    # axes scales and ticks
-    ax[i].set(xscale = 'log', xticks = [100, 1000, 5000], yscale = 'log', yticks = [0.1, 0.5, 1, 2, 10])
-    ax[i].tick_params(labelsize = 5)
-    ax[i].get_xaxis().set_major_formatter(ticker.ScalarFormatter())
-    ax[i].get_yaxis().set_major_formatter(ticker.ScalarFormatter())
+    ax.set(yscale = 'log', yticks = [0.05, 0.1, 0.2, 0.5, 1, 2, 10], ylim = [0.01, 10])
+    ax.get_yaxis().set_major_formatter(ticker.ScalarFormatter())
+    ax.tick_params(labelsize = 8)
 
-    # axis grid and title
-    ax[i].grid()
-    ax[i].set_title('Metaheuristics tuned with termination after ' + str(terminate['evals']) + ' evals', size = 5, pad = 3)
+    # axis grid and labels
+    ax.grid()
+    ax.set(xlabel = 'Experiments', ylabel = 'Quality Deviation Improvement')
 
-# legend
-handles, labels = ax[0].get_legend_handles_labels()
-fig.legend(handles, labels, loc='right')
+    # legend
+    ax.legend()
 
-# axes labels
-fig.text(0.5, 0.05, "Experiments", ha="center", va="center")
-fig.text(0.05, 0.5, "{} as proportion of {} without tuning".format(optimize, optimize), ha="center", va="center", rotation=90)
-fig.subplots_adjust(hspace=0.25)
-
-fig.savefig('myproject/data/figures/tuning_trajectories.png', dpi = 2000)
+    fig.tight_layout()
+    fig.savefig('myproject/data/figures/tuning-convergence/{}-evals.png'.format(terminate['evals']), bbox_inches='tight')
