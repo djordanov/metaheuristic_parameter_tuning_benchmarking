@@ -43,20 +43,6 @@ VALID_PARAMETERS = [
     'optimize'
 ]
 
-# configurations were copied manually :)
-
-final_elites_irace = [
-    ('ACO', {'antcount': 439, 'alpha': 3.543, 'beta': 14.8282, 'pbest': 84.5142, 'evaporation': 0.4428}, BASE_TERM, 'qualdev'),
-    ('ACO', {'antcount': 132, 'alpha': 0.6219, 'beta': 5.4251, 'pbest': 62.2747, 'evaporation': 0.7806}, BASE_TERM, 'qualdev'),
-    ('ACO', {'antcount': 47, 'alpha': 0.8079, 'beta': 6.6904, 'pbest': 0.7138, 'evaporation': 0.9638}, BASE_TERM, 'qualdev'),
-    ('GA', {'popsize': 1, 'mut_rate': 0.8581, 'rank_weight': 0.2627}, BASE_TERM, 'qualdev'),
-    ('GA', {'popsize': 1, 'mut_rate': 0.6601, 'rank_weight': 16.519}, BASE_TERM, 'qualdev'),
-    ('GA', {'popsize': 281, 'mut_rate': 0.5634, 'rank_weight': 0.9341}, BASE_TERM, 'qualdev'),
-    ('SA', {'initial_temperature': 22.1271, 'repetitions': 7902, 'cooling_factor': 0.8808}, BASE_TERM, 'qualdev'),
-    ('SA', {'initial_temperature': 258.6476, 'repetitions': 857, 'cooling_factor': 0.6707}, BASE_TERM, 'qualdev'),
-    ('SA', {'initial_temperature': 235.7388, 'repetitions': 3831, 'cooling_factor': 0.8593}, BASE_TERM, 'qualdev')
-]
-
 def calc_mean_std(instancefolder: str):
     entries = Path(instancefolder)
     stds = []
@@ -93,9 +79,10 @@ def config_to_cand_params_smac(configuration: str) -> list:
     cand_params = [x.split('=') for x in config.split(',')]
     return list(np.array(cand_params).flatten())
 
-def tun_fname_to_cand_params_irace(tun_fname: str) -> list:
-    tun_fname = 'test' + tun_fname + '.Rdata'
+def tun_fname_irace_to_cand_params(tun_fname: str) -> list: # TODO
+    tun_fname = 'myproject/data/irace/' + tun_fname + '.Rdata'
     robjects.r("library('irace')")
+    robjects.r('load("{}")'.format(tun_fname))
     robjects.r("config = getFinalElites(iraceResults, n = 1)")
 
     attributes = list(robjects.r("colnames(config)"))[1:-1]
@@ -260,3 +247,17 @@ def tun_traj(tuner: str, tuning_budget: int, algorithm: str, terminate: dict, op
     # move to tuning result as a proportion of default result
     traj[optimize] = traj[optimize] / default_result
     return traj
+
+def get_tuned_convergence_data(terminate: dict, tuner: str, metaheuristic: str, optimize: str) -> pd.DataFrame:
+    tfname = ctun_fname(tuning_budget = 5000, algorithm = metaheuristic, terminate = terminate, optimize = optimize)
+
+    cand_params = None
+    if tuner == 'smac':
+        incumbents = incumbents_smac(tfname)
+        string_config_smac = incumbents['Configuration'][len(incumbents) - 1]
+        cand_params = config_to_cand_params_smac(string_config_smac)
+    if tuner == 'irace':
+        cand_params = tun_fname_irace_to_cand_params(tfname)        
+    alg, config, term, opt = from_cand_params(cand_params)
+    mhrun_fname = cmhrun_fname(metaheuristic, config, BASE_TERM, optimize)
+    return pd.read_csv('myproject/data/conv/' + mhrun_fname + '.csv')
