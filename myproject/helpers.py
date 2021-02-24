@@ -249,9 +249,9 @@ def tun_traj(tuner: str, tuning_budget: int, algorithm: str, terminate: dict, op
     # build tuning trajectory (number of runs - result in comparison to default result) ...
     nruns = list(range(tuning_budget + 1))
     results = np.full((tuning_budget + 1,), np.nan)
-    results[0] = default_result
     for runs in elite_results['runs']:
         results[runs] = elite_results.loc[elite_results['runs'] == runs][optimize]
+    results[0] = default_result
 
     # create dataframe and pad in result of runs without incumbent
     traj = pd.DataFrame({'runs': nruns, optimize: results})
