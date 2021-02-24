@@ -1,5 +1,4 @@
 import itertools
-from myproject.run import mhruns
 
 import pandas as pd
 import pandas as pd
@@ -13,10 +12,10 @@ from myproject.helpers import incumbents_smac, from_cand_params, config_to_cand_
 from myproject.helpers import BASE_TERM, DEF_CFGS
 
 tuners = ['irace', 'smac']
-metaheuristics = ['SA', 'ACO', 'GA']
+metaheuristics = ['SA', 'ACO']
 levals = [0, 1000, 10000, 100000]
 
-felites_irace= {
+felites_irace= { #TODO
     "5000-ACO-[('evals', 1000), ('qualdev', 0)]-qualdev.Rdata": 
         {'antcount': 439, 'alpha': 3.543, 'beta': 14.8282, 'pbest': 84.5142, 'evaporation': 0.4428},
     "5000-ACO-[('evals', 10000), ('qualdev', 0)]-qualdev.Rdata": 
@@ -42,9 +41,9 @@ def plot_data(axes, df: pd.DataFrame, tuner: str, algorithm: str, ):
     conv = grouped_by_evals.mean()
     label = '{}'.format(algorithm) if tuner == None else '{} + {}'.format(algorithm, tuner)
     if tuner != None:
-        axes.plot(conv.index, conv.qualdev, label = label, color = LINE_COLORS[algorithm], linestyle = LINE_STYLES[tuner])
+        axes.plot(conv.index, conv.qualdev, label = label, color = LINE_COLORS[algorithm], linestyle = LINE_STYLES[tuner], alpha = 0.5)
     else:
-        axes.plot(conv.index, conv.qualdev, label = label, color = LINE_COLORS[algorithm])
+        axes.plot(conv.index, conv.qualdev, label = label, color = LINE_COLORS[algorithm], alpha = 0.5)
 
 def get_tuned_convergence_data(evals: int, tuner: str, metaheuristic: str, optimize: str) -> pd.DataFrame:
     terminate = {'qualdev': 0, 'evals': evals}
@@ -62,43 +61,43 @@ def get_tuned_convergence_data(evals: int, tuner: str, metaheuristic: str, optim
         mhrun_fname = cmhrun_fname(algorithm = metaheuristic, config = felites_irace[tfname + '.Rdata'], 
             terminate = BASE_TERM, optimize = optimize)
         return pd.read_csv('myproject/data/conv/' + mhrun_fname + '.csv')
+   
 
-def fill_subplot(evals, axes):
+for evals in levals:
+    # create axes
+    fig, ax = plt.subplots()
+    
+    # plot data
     # default convergence without tuning
     if evals == 0:
         for metaheuristic in metaheuristics:
             mhrun_fname = cmhrun_fname(algorithm = metaheuristic, config = DEF_CFGS[metaheuristic], terminate = BASE_TERM, optimize = 'qualdev')            
             df = pd.read_csv('myproject/data/conv/' + mhrun_fname + '.csv')
-            plot_data(axes, df, None, metaheuristic)
+            plot_data(ax, df, None, metaheuristic)
 
     else:
         for tuner_mh in itertools.product(tuners, metaheuristics):
             df = get_tuned_convergence_data(evals, tuner_mh[0], tuner_mh[1], 'qualdev')
-            plot_data(axes, df, tuner_mh[0], tuner_mh[1])
+            plot_data(ax, df, tuner_mh[0], tuner_mh[1])
         
+    # visual stuff...
+
     # axis scales
-    axes.set(xscale = 'log', yscale = 'log', yticks = [0.01, 0.1, 0.5, 1, 2])
-    axes.tick_params(labelsize = 5)
-    axes.get_xaxis().set_major_formatter(ticker.ScalarFormatter())
-    axes.get_yaxis().set_major_formatter(ticker.ScalarFormatter())
+    ax.set(xscale = 'log', yscale = 'log', yticks = [0.01, 0.1, 0.5, 1, 2], ylim = [0.005, 5])
+    ax.get_xaxis().set_major_formatter(ticker.ScalarFormatter())
+    ax.get_yaxis().set_major_formatter(ticker.ScalarFormatter())
 
-    # axis grid and title
-    axes.grid()
-    axes.set_title('Metaheuristics tuned with termination after ' + str(evals) + ' evals', size = 5, pad = 3)
+    # grid, axes labels and title
+    ax.grid()
+    ax.set_title('Metaheuristics tuned with termination after ' + str(evals) + ' evals')
+    ax.set(xlabel = 'Evals', ylabel = 'Quality Deviation')
 
-# convergence plot
-fig, ax = plt.subplots(nrows = 4, ncols = 1, sharex = True, sharey = True)
+    # height to width ratio
+    ax.set_aspect(0.7) 
 
-for i, evals in enumerate(levals):
-    fill_subplot(evals, ax[i])
+    # create legend
+    ax.legend()
 
-# legend
-handles, labels = ax[len(ax)-1].get_legend_handles_labels()
-fig.legend(handles, labels, loc='right')
-
-# axes labels
-fig.text(0.5, 0.05, "Evals", ha="center", va="center")
-fig.text(0.05, 0.5, "Quality Deviation", ha="center", va="center", rotation=90)
-fig.subplots_adjust(hspace=0.25)
-
-fig.savefig('myproject/data/figures/convergencenow.png', dpi = 2000)
+    # save figure
+    fig.tight_layout()
+    fig.savefig('myproject/data/figures/convergence/{}-evals.png'.format(evals), bbox_inches='tight')
