@@ -1,7 +1,7 @@
 library(irace)
 library(rmake)
 
-setwd('data/irace')
+setwd('myproject/data/irace')
 rdata_files = list.files('./', pattern = '*.Rdata')
 
 for (rdata_file in rdata_files) {
