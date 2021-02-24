@@ -65,7 +65,7 @@ def get_tuned_convergence_data(evals: int, tuner: str, metaheuristic: str, optim
 
 for evals in levals:
     # create axes
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(5.5, 2.36))
     
     # plot data
     # default convergence without tuning
@@ -87,13 +87,9 @@ for evals in levals:
     ax.get_xaxis().set_major_formatter(ticker.ScalarFormatter())
     ax.get_yaxis().set_major_formatter(ticker.ScalarFormatter())
 
-    # grid, axes labels and title
+    # grid and axes labels
     ax.grid()
-    ax.set_title('Metaheuristics tuned with termination after ' + str(evals) + ' evals')
     ax.set(xlabel = 'Evals', ylabel = 'Quality Deviation')
-
-    # height to width ratio
-    ax.set_aspect(0.7) 
 
     # create legend
     ax.legend()
