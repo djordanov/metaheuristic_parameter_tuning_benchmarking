@@ -1,13 +1,8 @@
+from myproject.helpers import BASE_TERM, DEF_CFGS, cmhrun_fname
 import pandas as pd
 import matplotlib.pyplot as plt
 
 from sklearn.linear_model import LinearRegression
-
-fnames = {
-    'SA': 'myproject/data/conv/SA-0-None-None.csv',
-    'ACO': 'myproject/data/conv/ACO-0-None-None.csv',
-    'GA': 'myproject/data/conv/GA-0-None-None.csv'
-}
 
 time2evals = {
     'algorithm': [],
@@ -16,10 +11,11 @@ time2evals = {
     'coefficient': []
 }
 
-for algorithm, file in fnames.items():
+for algorithm, config in DEF_CFGS.items():
     
     # linear regression time -> evals
-    df = pd.read_csv(file)
+    fname = cmhrun_fname(algorithm, config, BASE_TERM, 'qualdev')
+    df = pd.read_csv('myproject/data/conv/' + fname + '.csv')
     x = df.time.values.reshape(-1, 1)
     y = df.evals.values.reshape(-1, 1)
     model = LinearRegression().fit(x, y)
@@ -41,8 +37,9 @@ for algorithm, file in fnames.items():
 # save model values
 pd.DataFrame(time2evals).to_csv('myproject/data/time2evals.csv', index = None)
     
-plt.xlabel('Time in Seconds')
+plt.xlabel('Elapsed Wall Clock Time in Seconds')
 plt.ylabel('Number of Tour Quality Evaluations')
 plt.legend()
-plt.savefig('myproject/data/figures/time2evals.png', dpi = 1000)
+plt.tight_layout()
+plt.savefig('myproject/data/figures/time2evals.png')
 
