@@ -9,3 +9,8 @@ myproject/data
 smac-output
 pyconcorde
 myproject/tuning-settings/config-irace-sa-initial-parameters.txt
+myproject/tuning-settings/config-irace-aco-initial-parameters.txt
+myproject/tuning-settings/config-irace-ga-initial-parameters.txt
+myproject/tuning-settings/smac-aco-parameters.pcs
+myproject/tuning-settings/smac-ga-parameters.pcs
+myproject/tuning-settings/smac-sa-parameters.pcs
