@@ -10,7 +10,7 @@ import tsplib95
 
 # default termination condition and default parameter configurations
 
-BASE_TERM = {'qualdev': 0, 'evals': 100000}
+BASE_TERM = {'qualdev': 0.0, 'evals': 100000}
 DEF_CFG_SA_50N = {'initial_temperature': (-2 * 253.83) / math.log(0.47), 'repetitions': 2450, 'cooling_factor': 0.95}
 DEF_CFG_GA = {'popsize': 200, 'mut_rate': 0.01, 'rank_weight': 1.9}
 DEF_CFG_ACO_50N = {'antcount': 50, 'alpha': 1, 'beta': 2, 'evaporation': 0.98, 'pbest': 0.05}
