@@ -6,19 +6,19 @@ import matplotlib.pyplot as plt
 import matplotlib.lines as mlines
 from matplotlib import ticker
 
-from myproject.analyze.common_definitions import COLORS_METAHEURISTICS, STYLES_TUNERS, MARKERS_TUNEDTO
+from myproject.analyze.common_definitions import COLORS_METAHEURISTICS, STYLES_TUNERS
 
 from myproject.helpers import cmhrun_fname
 from myproject.helpers import get_tuned_convergence_data
 from myproject.helpers import BASE_TERM, DEF_CFGS
 
 legend_handles = [
-    mlines.Line2D([], [], color=COLORS_METAHEURISTICS['SA'], label='SA'),
-    mlines.Line2D([], [], color=COLORS_METAHEURISTICS['ACO'], label='ACO'),
-    mlines.Line2D([], [], color=COLORS_METAHEURISTICS['GA'], label='GA'),
-    mlines.Line2D([], [], label='untuned'),
-    mlines.Line2D([], [], linestyle=STYLES_TUNERS['irace'], label='irace'),
-    mlines.Line2D([], [], linestyle=STYLES_TUNERS['smac'], label='SMAC')
+    mlines.Line2D([], [], color=COLORS_METAHEURISTICS['SA'], label='SA', linewidth = 3),
+    mlines.Line2D([], [], color=COLORS_METAHEURISTICS['ACO'], label='ACO', linewidth = 3),
+    mlines.Line2D([], [], color=COLORS_METAHEURISTICS['GA'], label='GA', linewidth = 3),
+    mlines.Line2D([], [], label='untuned', linewidth = 3),
+    mlines.Line2D([], [], linestyle=STYLES_TUNERS['irace'], label='irace', linewidth = 3),
+    mlines.Line2D([], [], linestyle=STYLES_TUNERS['smac'], label='SMAC', linewidth = 3)
 ]
 
 tuners = ['irace', 'smac']
@@ -30,9 +30,9 @@ def plot_data(axes, df: pd.DataFrame, tuner: str, algorithm: str, ):
     conv = grouped_by_evals.mean()
     label = '{}'.format(algorithm) if tuner == None else '{} + {}'.format(algorithm, tuner)
     if tuner != None:
-        axes.plot(conv.index, conv.qualdev, label = label, color = COLORS_METAHEURISTICS[algorithm], linestyle = STYLES_TUNERS[tuner], alpha = 0.5)
+        axes.plot(conv.index, conv.qualdev, label = label, color = COLORS_METAHEURISTICS[algorithm], linestyle = STYLES_TUNERS[tuner], alpha = 0.7, linewidth = 3)
     else:
-        axes.plot(conv.index, conv.qualdev, label = label, color = COLORS_METAHEURISTICS[algorithm], alpha = 0.5)   
+        axes.plot(conv.index, conv.qualdev, label = label, color = COLORS_METAHEURISTICS[algorithm], alpha = 0.7, linewidth = 3)   
 
 fig, ax = plt.subplots(nrows = len(levals), ncols = 1, sharey = 'all', sharex = 'all', figsize=(9.6, 15.57))
 
@@ -56,7 +56,7 @@ for i, evals in enumerate(levals):
 
     # axis scales
     ax[i].set(xscale = 'log', yscale = 'log', yticks = [0.01, 0.1, 0.5, 1, 2], ylim = [0.005, 5])
-    ax[i].get_xaxis().set_major_formatter(ticker.StrMethodFormatter('{x:,}'))
+    ax[i].get_xaxis().set_major_formatter(ticker.StrMethodFormatter('{x:,.0f}'))
     ax[i].get_yaxis().set_major_formatter(ticker.ScalarFormatter())
 
     # grid and title

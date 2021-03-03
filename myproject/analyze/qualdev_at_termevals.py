@@ -8,7 +8,7 @@ from matplotlib import ticker
 import matplotlib.lines as mlines
 import matplotlib.patches as mpatches
 
-from myproject.analyze.common_definitions import COLORS_METAHEURISTICS, COLORS_TUNEDTO, MARKERS_METAHEURISTICS, MARKERS_TUNEDTO
+from myproject.analyze.common_definitions import COLORS_TUNEDTO, MARKERS_METAHEURISTICS
 
 from myproject.helpers import cmhrun_fname, get_tuned_convergence_data
 from myproject.helpers import BASE_TERM, DEF_CFGS
@@ -18,9 +18,9 @@ legend_handles = [
     mpatches.Patch(color=COLORS_TUNEDTO[1000], label='Tuned to 1,000 Evals'),
     mpatches.Patch(color=COLORS_TUNEDTO[10000], label='Tuned to 10,000 Evals'),
     mpatches.Patch(color=COLORS_TUNEDTO[100000], label='Tuned to 100,000 Evals'),
-    mlines.Line2D([], [], marker=MARKERS_METAHEURISTICS['SA'], linestyle = "None", markersize=10, label='SA'),
-    mlines.Line2D([], [], marker=MARKERS_METAHEURISTICS['ACO'], linestyle = "None", markersize=10, label='ACO'),
-    mlines.Line2D([], [], marker=MARKERS_METAHEURISTICS['GA'], linestyle = "None", markersize=10, label='GA')
+    mlines.Line2D([], [], marker=MARKERS_METAHEURISTICS['SA'], linestyle = "None", markersize=10, color='black', label='SA'),
+    mlines.Line2D([], [], marker=MARKERS_METAHEURISTICS['ACO'], linestyle = "None", markersize=10, color='black', label='ACO'),
+    mlines.Line2D([], [], marker=MARKERS_METAHEURISTICS['GA'], linestyle = "None", markersize=10, color='black', label='GA')
 ]
 
 tuners = ['irace', 'smac']
@@ -62,7 +62,7 @@ for constellation in itertools.product(levals, metaheuristics, tuners):
 
 # axis scales
 ax.set(xscale = 'log', yscale = 'log', yticks = [0.01, 0.1, 0.5, 1, 2], ylim = [0.005, 5])
-ax.get_xaxis().set_major_formatter(ticker.StrMethodFormatter('{x:,.0}'))
+ax.get_xaxis().set_major_formatter(ticker.StrMethodFormatter('{x:,.0f}'))
 ax.get_yaxis().set_major_formatter(ticker.ScalarFormatter())
 
 # grid and axes labels
