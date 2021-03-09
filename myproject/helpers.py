@@ -70,8 +70,8 @@ def def_cfg_aco(problem: tsplib95.models.StandardProblem) -> dict:
 def ctun_fname(tuning_budget: int, algorithm: str, terminate: dict, optimize: str) -> str:
     return '-'.join([str(tuning_budget), algorithm, str(sorted(terminate.items())), optimize])
 
-def cmhrun_fname(algorithm: str, config: dict, terminate: dict, optimize: str):
-    return '-'.join([algorithm, str(sorted(terminate.items())), str(sorted(config.items())), optimize])
+def cmhrun_fname(algorithm: str, config: dict, terminate: dict):
+    return '-'.join([algorithm, str(sorted(terminate.items())), str(sorted(config.items()))])
 
 # get configurations from tuning output files
 def config_to_cand_params_smac(configuration: str) -> list:
@@ -160,7 +160,7 @@ def separate_cfg_term_opt(params: dict) -> tuple:
     return cfg, terminate, optimize
 
 
-### build tuning trajectory dataframe ###
+### build tuning convergence dataframe ###
     
 def incumbents_smac(fname: str) -> pd.DataFrame:
     folder = Path('myproject/data/smac/' + fname + '/NoScenarioFile')
@@ -202,7 +202,7 @@ def elite_results_smac(tuning_budget: int, algorithm: str, terminate: dict, opti
         cand_params = config_to_cand_params_smac(string_configuration_smac)
         algorithm, config, terminate, optimize = from_cand_params(cand_params)
 
-        mhrun_fname = cmhrun_fname(algorithm, config, terminate, optimize)
+        mhrun_fname = cmhrun_fname(algorithm, config, terminate)
         mhrun_results = pd.read_csv('myproject/data/results/' + mhrun_fname + '.csv')
         incumbent_qualities.append(pd.to_numeric(mhrun_results[optimize], errors = 'coerce').mean())
 
@@ -229,9 +229,10 @@ def tun_traj(tuner: str, tuning_budget: int, algorithm: str, terminate: dict, op
         else elite_results_smac(tuning_budget, algorithm, terminate, optimize)
     
     # get default result
-    mhrun_fname = cmhrun_fname(algorithm, DEF_CFGS[algorithm], terminate, optimize)
+    mhrun_fname = cmhrun_fname(algorithm, DEF_CFGS[algorithm], terminate)
     mhrun_results = pd.read_csv('myproject/data/results/' + mhrun_fname + '.csv')
-    default_result = mhrun_results.mean()[optimize]
+    mhrun_results[optimize] = pd.to_numeric(mhrun_results[optimize], errors = 'coerce')
+    default_result = mhrun_results[optimize].mean()
 
     # build tuning trajectory (number of runs - result in comparison to default result) ...
     nruns = list(range(tuning_budget + 1))
@@ -248,7 +249,7 @@ def tun_traj(tuner: str, tuning_budget: int, algorithm: str, terminate: dict, op
     traj[optimize] = traj[optimize] / default_result
     return traj
 
-def get_tuned_convergence_data(terminate: dict, tuner: str, metaheuristic: str, optimize: str) -> pd.DataFrame:
+def mhrun_fname_from_tuning_data(terminate: dict, tuner: str, metaheuristic: str, optimize: str) -> str:
     tfname = ctun_fname(tuning_budget = 5000, algorithm = metaheuristic, terminate = terminate, optimize = optimize)
 
     cand_params = None
@@ -260,4 +261,8 @@ def get_tuned_convergence_data(terminate: dict, tuner: str, metaheuristic: str, 
         cand_params = tun_fname_irace_to_cand_params(tfname)        
     alg, config, term, opt = from_cand_params(cand_params)
     mhrun_fname = cmhrun_fname(metaheuristic, config, BASE_TERM, optimize)
+    return mhrun_fname
+
+def get_tuned_convergence_data(terminate: dict, tuner: str, metaheuristic: str, optimize: str) -> pd.DataFrame:
+    mhrun_fname = mhrun_fname_from_tuning_data(terminate, tuner, metaheuristic, optimize)
     return pd.read_csv('myproject/data/conv/' + mhrun_fname + '.csv')
