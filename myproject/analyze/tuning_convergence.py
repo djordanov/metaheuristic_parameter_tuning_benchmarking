@@ -19,9 +19,9 @@ tuners = ['smac', 'irace']
 metaheuristics = ['SA', 'ACO', 'GA']
 optimize = 'evals'
 tuning_budget = 700
-qd_term_factors = [1, 2, 3]
+qd_term_factors = [3, 2, 1]
 
-fig, ax = plt.subplots(nrows = 3, ncols = 1, sharey = 'all', sharex = 'all', figsize=(9.6, 14.57))
+fig, ax = plt.subplots(nrows = 3, ncols = 1, sharey = 'all', sharex = 'all', figsize=(9.6, 15.57))
 
 for i, qd_term_factor in enumerate(qd_term_factors):
     for metaheuristic in metaheuristics:
@@ -44,11 +44,12 @@ for i, qd_term_factor in enumerate(qd_term_factors):
     ax[i].grid()
 
     # title
-    ax[i].set_title('Tuning convergence when tuning to a quality deviation {:,.0f} times the achieved quality deviation with default parameters'.format(qd_term_factor), 
-        fontsize = 12)
+    factor_as_string = 'thrice' if qd_term_factor == 3 else 'twice' if qd_term_factor == 2 else 'equal to' 
+    title = 'Tuning convergence with a fixed-quality of {} times the average achieved quality deviation with default parameters'.format(factor_as_string)
+    ax[i].set_title(title, fontsize = 12)
     
 # x axis label and legend
-ax[len(ax) - 1].set(xlabel = 'Experiments', ylabel = 'Number of Evaluations')
+ax[len(ax) - 1].set(xlabel = 'Experiments', ylabel = 'Tuning Quality')
 fig.legend(handles = legend_handles)
 
 fig.tight_layout()
