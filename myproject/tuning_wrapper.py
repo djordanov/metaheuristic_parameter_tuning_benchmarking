@@ -83,7 +83,7 @@ def smac(budget: int,
             train_instances_dir: str,
             outdir_suffix: str = '') -> None:
 
-    outdir = 'myproject/data/smac/' + ctun_fname(budget, algorithm, terminate, optimize) + outdir_suffix
+    outdir = 'myproject/data/smac/' + ctun_fname(budget, algorithm, terminate, optimize, outdir_suffix)
     if not Path(outdir).exists():
         Path(outdir).mkdir()
 

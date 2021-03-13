@@ -4,7 +4,7 @@ from matplotlib import ticker
 import matplotlib.lines as mlines
 
 from myproject.analyze.common_definitions import COLORS_METAHEURISTICS, STYLES_TUNERS
-from myproject.helpers import tun_traj, cmhrun_fname
+from myproject.helpers import tun_conv, cmhrun_fname
 from myproject.helpers import DEF_CFGS, BASE_TERM
 
 legend_handles = [
@@ -31,8 +31,8 @@ for i, qd_term_factor in enumerate(qd_term_factors):
         terminate = {'qualdev': default_qualdev, 'evals': 100000}
 
         for tuner in ['irace', 'smac']:
-            traj = tun_traj(tuner = tuner, tuning_budget = tuning_budget, algorithm = metaheuristic, terminate = terminate, optimize = optimize)
-            ax[i].plot(traj['runs'], traj[optimize], label = '{} tuned by {}'.format(metaheuristic, tuner), 
+            conv = tun_conv(tuner = tuner, tuning_budget = tuning_budget, algorithm = metaheuristic, terminate = terminate, optimize = optimize)
+            ax[i].plot(conv['runs'], conv[optimize], label = '{} tuned by {}'.format(metaheuristic, tuner), 
                 color = COLORS_METAHEURISTICS[metaheuristic], linestyle = STYLES_TUNERS[tuner], alpha = 0.7, linewidth = 3)
 
         ax[i].set(yscale = 'log', yticks = [0.2, 0.5, 1, 2, 5], ylim = [0.2, 5])
