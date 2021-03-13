@@ -67,8 +67,8 @@ def def_cfg_aco(problem: tsplib95.models.StandardProblem) -> dict:
     return {'antcount': antcount, 'alpha': 1, 'beta': 2, 'evaporation': 0.98, 'pbest': 0.05}
 
 # file and folder names
-def ctun_fname(tuning_budget: int, algorithm: str, terminate: dict, optimize: str) -> str:
-    return '-'.join([str(tuning_budget), algorithm, str(sorted(terminate.items())), optimize])
+def ctun_fname(tuning_budget: int, algorithm: str, terminate: dict, optimize: str, suffix: str = '') -> str:
+    return '-'.join([str(tuning_budget), algorithm, str(sorted(terminate.items())), optimize]) + suffix
 
 def cmhrun_fname(algorithm: str, config: dict, terminate: dict):
     return '-'.join([algorithm, str(sorted(terminate.items())), str(sorted(config.items()))])
@@ -189,8 +189,8 @@ def incumbents_smac(fname: str) -> pd.DataFrame:
         
     return incumbents
 
-def elite_results_smac(tuning_budget: int, algorithm: str, terminate: dict, optimize: str) -> pd.DataFrame:
-    tun_fname = ctun_fname(tuning_budget, algorithm, terminate, optimize)
+def elite_results_smac(tuning_budget: int, algorithm: str, terminate: dict, optimize: str, suffix: str) -> pd.DataFrame:
+    tun_fname = ctun_fname(tuning_budget, algorithm, terminate, optimize, suffix)
 
     # load incumbents with configurations
     incumbents = incumbents_smac(tun_fname)
@@ -210,8 +210,8 @@ def elite_results_smac(tuning_budget: int, algorithm: str, terminate: dict, opti
     elite_results[optimize] = incumbent_qualities
     return elite_results
 
-def elite_results_irace(tuning_budget: int, algorithm: str, terminate: dict, optimize: str) -> pd.DataFrame:
-    fname = 'myproject/data/irace/' + ctun_fname(tuning_budget, algorithm, terminate, optimize)
+def elite_results_irace(tuning_budget: int, algorithm: str, terminate: dict, optimize: str, suffix: str) -> pd.DataFrame:
+    fname = 'myproject/data/irace/' + ctun_fname(tuning_budget, algorithm, terminate, optimize, suffix)
     fiterations = fname + '-iterations.csv'
     ftest_experiments = fname + '-test-experiments.csv'
     iterations = pd.read_csv(fiterations)
@@ -224,9 +224,9 @@ def elite_results_irace(tuning_budget: int, algorithm: str, terminate: dict, opt
 
     return elite_results
 
-def tun_traj(tuner: str, tuning_budget: int, algorithm: str, terminate: dict, optimize: str):
-    elite_results = elite_results_irace(tuning_budget, algorithm, terminate, optimize) if tuner == 'irace' \
-        else elite_results_smac(tuning_budget, algorithm, terminate, optimize)
+def tun_conv(tuner: str, tuning_budget: int, algorithm: str, terminate: dict, optimize: str, suffix: str = ''):
+    elite_results = elite_results_irace(tuning_budget, algorithm, terminate, optimize, suffix) if tuner == 'irace' \
+        else elite_results_smac(tuning_budget, algorithm, terminate, optimize, suffix)
     
     # get default result
     mhrun_fname = cmhrun_fname(algorithm, DEF_CFGS[algorithm], terminate)
@@ -260,7 +260,7 @@ def mhrun_fname_from_tuning_data(terminate: dict, tuner: str, metaheuristic: str
     if tuner == 'irace':
         cand_params = tun_fname_irace_to_cand_params(tfname)        
     alg, config, term, opt = from_cand_params(cand_params)
-    mhrun_fname = cmhrun_fname(metaheuristic, config, BASE_TERM, optimize)
+    mhrun_fname = cmhrun_fname(metaheuristic, config, BASE_TERM)
     return mhrun_fname
 
 def get_tuned_convergence_data(terminate: dict, tuner: str, metaheuristic: str, optimize: str) -> pd.DataFrame:
