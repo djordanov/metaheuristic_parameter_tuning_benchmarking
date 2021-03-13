@@ -12,6 +12,7 @@ COLORS_TUNEDTO = {
 }
 
 STYLES_TUNERS = {
+    'notuner': 'solid',
     'irace': 'dashed',
     'smac': 'dotted'
 }
