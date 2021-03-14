@@ -16,4 +16,4 @@
 
 * Parameter spaces are defined in myproject/tuning-settings. They are partly rewritten on the fly for technical reasons.
 * Data analyzation- and diagram generation scripts are in myproject/analyze.
-* Data is saved into a folder structure in myproject/data. Irace result files are saved into myproject/data/irace, smac files into myproject/data/smac, the metaheuristic convergence data into myproject/data/conv and the end results of a tuning run into myproject/data/results
+* Data is saved into a folder structure in myproject/data. Irace result files are saved into myproject/data/irace, smac files into myproject/data/smac, the metaheuristic convergence data into myproject/data/conv and the end results of a tuning run into myproject/data/results 
