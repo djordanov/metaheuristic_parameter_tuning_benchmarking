@@ -3,9 +3,8 @@ __pycache__/
 macode.Rproj
 irace.Rdata
 myproject/data
-myproject/data (copy)/
-smac-output
-pyconcorde
+smac-v2.10.03-master-778
+py-concorde
 dist
 myproject/tuning-settings/config-irace-sa-initial-parameters.txt
 myproject/tuning-settings/config-irace-aco-initial-parameters.txt
