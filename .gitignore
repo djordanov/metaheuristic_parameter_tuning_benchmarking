@@ -1,16 +1,12 @@
 __pycache__/
-.Rproj.user
-myproject/instances
-.vscode
-macode.Rproj
 .*
+macode.Rproj
 irace.Rdata
 myproject/data
+myproject/data (copy)/
 smac-output
 pyconcorde
+dist
 myproject/tuning-settings/config-irace-sa-initial-parameters.txt
 myproject/tuning-settings/config-irace-aco-initial-parameters.txt
 myproject/tuning-settings/config-irace-ga-initial-parameters.txt
-myproject/tuning-settings/smac-aco-parameters.pcs
-myproject/tuning-settings/smac-ga-parameters.pcs
-myproject/tuning-settings/smac-sa-parameters.pcs

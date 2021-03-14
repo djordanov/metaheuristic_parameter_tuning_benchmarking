@@ -14,7 +14,7 @@ import myproject.tuning_wrapper as tuning_wrapper
 
 from myproject.helpers import BASE_TERM, DEF_CFG_SA_50N, DEF_CFG_GA, DEF_CFG_ACO_50N, DEF_CFGS
 from myproject.helpers import cmhrun_fname, ctun_fname
-from myproject.helpers import incumbents_smac, config_to_cand_params_smac, from_cand_params, tun_fname_irace_to_cand_params
+from myproject.helpers import incumbents_smac, config_to_cand_params_smac, from_cand_params
 
 from collections import namedtuple
 
@@ -84,7 +84,7 @@ terminate = {'qualdev': 0, 'evals': 1000}
 
 # actually run tuners
 for metaheuristic in metaheuristics:
-    for repetitions in range(34, 50):
+    for repetitions in range(51, 52):
         for tuner in tuners:
             print(', '.join([metaheuristic, tuner, str(terminate)]))
             if tuner == 'irace':
