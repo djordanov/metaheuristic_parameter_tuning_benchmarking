@@ -21,7 +21,7 @@ optimize = 'evals'
 tuning_budget = 700
 qd_term_factors = [3, 2, 1]
 
-fig, ax = plt.subplots(nrows = 3, ncols = 1, sharey = 'all', sharex = 'all', figsize=(9.6, 15.57))
+fig, ax = plt.subplots(nrows = 3, ncols = 1, sharey = 'all', sharex = 'all', figsize=(9.6, 16.57))
 
 for i, qd_term_factor in enumerate(qd_term_factors):
     for metaheuristic in metaheuristics:
