@@ -1,2 +1,0 @@
-"CPU Time Used","Estimated Training Performance","Wallclock Time","Incumbent ID","Automatic Configurator (CPU) Time","Full Configuration","Predicted Performance (if available)",
-"0.0"," 1.7976931348623157E308","0.0","1","0.0", " algorithm='SA', cooling_factor='0.8', initial_temperature='500.0', optimize='qualdev', repetitions='500', term_evals='True', term_evals_val='100'","NaN"

@@ -1,7 +1,0 @@
-algorithm categorical {SA}[SA]
-initial_temperature real    [1, 1000] [500]
-repetitions integer [1, 1000]   [500]
-cooling_factor real [0.0001, 1] [0.8]
-optimize categorical {qualdev}[qualdev]
-term_evals categorical {True}[True]
-term_evals_val categorical {100}[100]
